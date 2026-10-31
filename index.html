@@ -3,47 +3,99 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>نظام الإجازات - تصدير مقيمين Excel</title>
+<title>نظام الإجازات v4 - نهائي</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{font-family:Cairo,sans-serif;box-sizing:border-box}
 body{margin:0;background:#0f172a;color:#fff;min-height:100vh}
-.header{background:linear-gradient(135deg,#0f172a,#4f46e5);padding:18px;text-align:center;border-bottom:3px solid #10b981}
-.card{background:#1e293b;margin:12px;padding:16px;border-radius:14px;border:1px solid #334155}
-input{width:100%;padding:12px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#fff;margin:6px 0}
-button{padding:11px 18px;border-radius:10px;border:none;background:#10b981;color:#fff;font-weight:800;cursor:pointer;margin:4px}
-.btn-blue{background:#6366f1}.btn-orange{background:#f59e0b;color:#000}
-.tabs{display:flex;gap:8px;justify-content:center;margin:12px}
-.tab{padding:10px 20px;background:#334155;border-radius:20px;cursor:pointer;font-weight:700}
+.header{background:linear-gradient(135deg,#0f172a,#4f46e5);padding:14px;text-align:center;border-bottom:3px solid #10b981}
+.card{background:#1e293b;margin:10px;padding:14px;border-radius:12px;border:1px solid #334155}
+input,select{width:100%;padding:11px;border-radius:9px;border:1px solid #334155;background:#0f172a;color:#fff;margin:5px 0;font-size:13px}
+button{padding:11px 14px;border-radius:9px;border:none;background:#10b981;color:#fff;font-weight:800;cursor:pointer;margin:4px 0;width:100%}
+.btn-blue{background:#6366f1}.btn-orange{background:#f59e0b;color:#000}.btn-red{background:#ef4444}.btn-green{background:#10b981}
+.tabs{display:flex;gap:8px;justify-content:center;margin:10px}
+.tab{padding:10px 18px;background:#334155;border-radius:20px;cursor:pointer;font-weight:700;font-size:13px}
 .tab.active{background:#10b981;color:#000}
-.balance-big{font-size:48px;font-weight:900;color:#10b981;text-align:center}
-.alert{padding:10px;border-radius:10px;margin:8px 0;font-size:12px}
+.balance-big{font-size:44px;font-weight:900;color:#10b981;text-align:center;margin:6px 0}
+.alert{padding:9px;border-radius:9px;margin:7px 0;font-size:11px}
 .alert-green{background:#065f46;border:1px solid #10b981}
-.alert-yellow{background:#78350f;border:1px solid #f59e0b}
+.alert-red{background:#7f1d1d;border:1px solid #ef4444}
 .alert-blue{background:#1e3a8a;border:1px solid #6366f1}
-table{width:100%;border-collapse:collapse;margin-top:10px;background:#0f172a;border-radius:8px;overflow:hidden}
+.alert-yellow{background:#78350f;border:1px solid #f59e0b}
+table{width:100%;border-collapse:collapse;margin-top:8px;background:#0f172a;border-radius:8px;overflow:hidden}
 th,td{padding:6px;border:1px solid #334155;text-align:center;font-size:10px}
-th{background:#334155}
-.upload-area{border:2px dashed #10b981;padding:20px;border-radius:12px;text-align:center;background:#0f172a;margin:12px 0;cursor:pointer}
+th{background:#334155;font-size:11px}
+.upload-area{border:2px dashed #10b981;padding:16px;border-radius:10px;text-align:center;background:#0f172a;margin:10px 0;cursor:pointer}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.badge{padding:2px 8px;border-radius:10px;font-size:9px;font-weight:800}
+.badge-moght{background:#065f46;color:#10b981}
+.badge-moqim{background:#1e3a8a;color:#93c5fd}
 </style>
 </head>
 <body>
-<div class="header"><h2 style="margin:0">🏭 نظام رصيد الإجازات - تصدير مقيمين Excel</h2></div>
+<div class="header"><h3 style="margin:0">🏭 نظام الإجازات v4 - نهائي</h3><small style="color:#94a3b8">مغترب 5/6 أيام | مقيم 21/30 يوم 26 ديسمبر | خصم إجازات</small></div>
 <div class="tabs"><div class="tab active" id="btnEmp" onclick="switchTab('emp')">👤 موظف</div><div class="tab" id="btnAdmin" onclick="switchTab('admin')">🔐 إدارة</div></div>
-<div id="tab-emp"><div class="card" style="text-align:center;border:2px solid #10b981"><input id="empCodeOnly" type="tel" placeholder="101" style="text-align:center;font-size:22px;font-weight:900"><button onclick="searchByCode()" style="width:100%">🔍 عرض رصيدي</button><div id="empResult"></div></div><div class="card" id="dataStatus"></div><div class="card" id="autoStatus"></div></div>
-<div id="tab-admin" style="display:none"><div class="card"><h3>🔐 إدارة</h3><input id="adminPass" type="password" placeholder="كلمة السر"><button class="btn-blue" onclick="loginAdmin()">دخول</button><div id="adminContent" style="display:none">
-<div class="upload-area" onclick="document.getElementById('excelFile').click()">📁 اختر data.xlsx<input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none" onchange="handleExcel(event)"></div>
+<div id="tab-emp">
+<div class="card" style="text-align:center;border:2px solid #10b981">
+<h4 style="margin:4px">👤 استعلام بالكود</h4>
+<input id="empCodeOnly" type="tel" placeholder="101" style="text-align:center;font-size:22px;font-weight:900;letter-spacing:3px">
+<button onclick="searchByCode()">🔍 عرض رصيدي</button>
+<div id="empResult" style="margin-top:10px"></div>
+</div>
+<div class="card" id="dataStatus"></div>
+<div class="card" id="autoStatus"></div>
+</div>
+<div id="tab-admin" style="display:none">
+<div class="card">
+<h4>🔐 دخول الإدارة</h4>
+<input id="adminPass" type="password" placeholder="Ahmed@salwa2020">
+<button class="btn-blue" onclick="loginAdmin()">دخول</button>
+<div id="adminContent" style="display:none">
+<div class="card" style="background:#0f172a;border:2px dashed #10b981">
+<b>📁 البيانات</b>
+<div class="upload-area" onclick="document.getElementById('excelFile').click()">اختر ملف data.xlsx<br><small>به عمود النوع مغترب/مقيم</small><input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none" onchange="handleExcel(event)"></div>
 <div id="uploadStatus"></div>
-<button class="btn-blue" onclick="loadFromServer()" style="width:100%">🔄 تحميل من data.xlsx</button>
-<button class="btn-orange" onclick="forceMonthlyUpdate()" style="width:100%;margin-top:8px">⚡ زيادة يوم 26 الآن</button>
-<button class="btn-orange" onclick="handleAnnualReset()" style="width:100%;margin-top:8px;background:#f59e0b">📅 رصيد سنوي جديد 26 ديسمبر</button>
-<hr>
-<input id="adjCode" placeholder="كود"><input id="adjAmount" type="number" step="0.5" placeholder="+1 أو -1"><input id="adjReason" placeholder="السبب: تحويل إضافي"><button class="btn-orange" onclick="adjustBalance()" style="width:100%">✅ تطبيق تعديل يدوي</button>
-<hr><input id="adminSearch" placeholder="بحث..." oninput="renderAdmin()"><div id="adminList"></div>
-<button class="btn-blue" onclick="exportAllResidents()" style="background:#10b981;width:100%">📗 تصدير أرصدة المقيمين الحالية Excel</button>
-<button class="btn-blue" onclick="exportOldBalances()" style="background:#f59e0b;color:#000;width:100%;margin-top:8px">💰 تصدير الأرصدة القديمة للمقيمين (فلوس) Excel</button>
-</div></div></div>
+<button class="btn-blue" onclick="loadFromServer()">🔄 تحميل تلقائي من data.xlsx</button>
+</div>
+<div class="card" style="background:#0f172a">
+<b>⚙️ التحكم الشهري والسنوي</b>
+<button class="btn-orange" onclick="forceMonthlyUpdate()">⚡ زيادة يوم 26 الآن - 5 أيام مغترب / 6 للي كمل 10 سنين حتى شهر 9</button>
+<button class="btn-orange" onclick="handleAnnualReset()" style="background:#f59e0b">📅 رصيد سنوي جديد 26 ديسمبر - 21 يوم أو 30 يوم للمقيمين</button>
+</div>
+<div class="card" style="background:#0f172a;border:2px solid #f59e0b">
+<b>💰 تصدير Excel - المقيمين فقط</b>
+<button class="btn-green" onclick="exportAllResidents()">📗 تصدير أرصدة المقيمين الحالية Excel<br><small>كود - اسم - نوع - إدارة - متبقي</small></button>
+<button class="btn-orange" onclick="exportOldBalances()">💰 تصدير الأرصدة القديمة للمقيمين (فلوس) Excel</button>
+</div>
+<div class="card" style="background:#0f172a;border:2px solid #10b981">
+<b>➕ إضافة رصيد (تحويل إضافي)</b>
+<div class="grid2"><input id="adjCode" placeholder="كود الموظف"><input id="adjAmount" type="number" step="0.5" placeholder="+2 أو +1.5"></div>
+<input id="adjReason" placeholder="السبب: تحويل ساعات إضافية">
+<button class="btn-green" onclick="adjustBalance()">✅ إضافة رصيد</button>
+</div>
+<div class="card" style="background:#0f172a;border:2px solid #ef4444">
+<b>➖ خصم إجازة (أيام معينة من أي شهر)</b>
+<div class="grid2">
+<input id="leaveCode" placeholder="كود الموظف">
+<input id="leaveDays" type="number" step="0.5" placeholder="عدد الأيام: 2 أو 0.5">
+</div>
+<div class="grid2">
+<input id="leaveDate" type="date">
+<select id="leaveType"><option value="إجازة سنوية">إجازة سنوية</option><option value="إجازة عارضة">إجازة عارضة</option><option value="إجازة مرضية">إجازة مرضية</option><option value="إجازة بدون رصيد">بدون رصيد</option></select>
+</div>
+<input id="leaveReason" placeholder="ملاحظة: إجازة يوم 5 و 6 مايو مثلا">
+<button class="btn-red" onclick="deductLeave()">➖ خصم الإجازة من الرصيد</button>
+<div id="leaveResult"></div>
+</div>
+<div class="card">
+<b>📋 كل الموظفين - النوع ظاهر</b>
+<input id="adminSearch" placeholder="بحث كود أو اسم..." oninput="renderAdmin()">
+<div id="adminList"></div>
+</div>
+</div>
+</div>
+</div>
 <script>
 function _0xCheck(p){ const _0xK=[65, 104, 109, 101, 100, 64, 115, 97, 108, 119, 97, 50, 48, 50, 48]; if(p.length!==_0xK.length) return false; for(let i=0;i<_0xK.length;i++) if(p.charCodeAt(i)!==_0xK[i]) return false; return true; }
 let employees=[],adjustments={},hasData=false;
@@ -57,50 +109,34 @@ async function loadFromServer(){ for(let fname of ['data.xlsx','Data.xlsx']){ tr
 function getBaseBalance(emp){ let keys=Object.keys(emp.balances); if(keys.length>0) return emp.balances[keys[keys.length-1]]; return 0; }
 function getTenureYears(hireStr){ return (new Date()-new Date(hireStr))/(1000*60*60*24*365.25); }
 function getMonthlyAddition(emp, forDate){ let hire=new Date(emp.hire); let now=forDate||new Date(); let tenure=(now-hire)/(1000*60*60*24*365.25); let month=now.getMonth()+1; let isMog=String(emp.type).includes('مغترب'); let add=0; if(isMog){ let isFirst=hire.getMonth()===now.getMonth()&&hire.getFullYear()===now.getFullYear(); if(isFirst){let dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate(); let worked=dim-hire.getDate()+1; add=(worked/dim)*5; add=Math.round(add*2)/2;} else{add=5;} if(tenure>=10&&month>=1&&month<=9) add+=1; } else{ if(tenure<0.5) add=0; else if(tenure>=10&&month>=1&&month<=9) add=1; } return add; }
-function checkMonthlyAuto(){ if(!hasData) return; let now=new Date(); let last=localStorage.getItem('last_auto_month'); let key=`${now.getFullYear()}-${now.getMonth()+1}`; if(now.getDate()<26) return; if(last===key) return; employees.forEach(emp=>{ let add=getMonthlyAddition(emp,now); if(add>0){ let code=String(emp.code); if(!adjustments[code]) adjustments[code]=[]; if(!adjustments[code].some(a=>a.reason.includes(key))){ adjustments[code].push({amount:add,reason:`زيادة شهرية ${key}`,date:now.toISOString().slice(0,10)}); } } }); localStorage.setItem('egazat_adjustments',JSON.stringify(adjustments)); localStorage.setItem('last_auto_month',key); }
-function handleAnnualReset(){ let now=new Date(); let yearKey=now.getFullYear(); let oldBalances=JSON.parse(localStorage.getItem('old_balances_'+yearKey)||'{}'); let newYear=yearKey+1; employees.forEach(emp=>{ let isMog=String(emp.type).includes('مغترب'); if(!isMog){ let tenure=getTenureYears(emp.hire); let finalBal=getFinalBalance(emp); oldBalances[String(emp.code)]={name:emp.name,dept:emp.dept,type:emp.type,oldBalance:finalBal,hire:emp.hire,tenure:tenure.toFixed(1),date:now.toISOString().slice(0,10)}; let newAnnual=tenure>=10?30:21; let diff=newAnnual-finalBal; let code=String(emp.code); if(!adjustments[code]) adjustments[code]=[]; adjustments[code].push({amount:diff,reason:`رصيد سنوي جديد ${newYear} - ${newAnnual}`,date:now.toISOString().slice(0,10)}); } }); localStorage.setItem('old_balances_'+yearKey,JSON.stringify(oldBalances)); localStorage.setItem('egazat_adjustments',JSON.stringify(adjustments)); localStorage.setItem('last_annual_year',yearKey); alert('تم تطبيق الرصيد السنوي الجديد'); renderAdmin(); }
+function checkMonthlyAuto(){ if(!hasData) return; let now=new Date(); let last=localStorage.getItem('last_auto_month'); let key=`${now.getFullYear()}-${now.getMonth()+1}`; if(now.getDate()<26) return; if(last===key) return; let cnt=0; employees.forEach(emp=>{ let add=getMonthlyAddition(emp,now); if(add>0){ let code=String(emp.code); if(!adjustments[code]) adjustments[code]=[]; if(!adjustments[code].some(a=>a.reason.includes(key))){ adjustments[code].push({amount:add,reason:`زيادة شهرية ${key} - ${emp.type}`,date:now.toISOString().slice(0,10)}); cnt++; } } }); if(cnt>0){ localStorage.setItem('egazat_adjustments',JSON.stringify(adjustments)); localStorage.setItem('last_auto_month',key); } }
+function handleAnnualReset(){ let now=new Date(); let yearKey=now.getFullYear(); let oldBalances=JSON.parse(localStorage.getItem('old_balances_'+yearKey)||'{}'); let newYear=yearKey+1; employees.forEach(emp=>{ let isMog=String(emp.type).includes('مغترب'); if(!isMog){ let tenure=getTenureYears(emp.hire); let finalBal=getFinalBalance(emp); oldBalances[String(emp.code)]={name:emp.name,dept:emp.dept,type:emp.type,oldBalance:finalBal,hire:emp.hire,tenure:tenure.toFixed(1),date:now.toISOString().slice(0,10)}; let newAnnual=tenure>=10?30:21; let diff=newAnnual-finalBal; let code=String(emp.code); if(!adjustments[code]) adjustments[code]=[]; adjustments[code].push({amount:diff,reason:`رصيد سنوي جديد ${newYear} - ${newAnnual} يوم`,date:now.toISOString().slice(0,10)}); } }); localStorage.setItem('old_balances_'+yearKey,JSON.stringify(oldBalances)); localStorage.setItem('egazat_adjustments',JSON.stringify(adjustments)); alert('تم تطبيق الرصيد السنوي الجديد'); renderAdmin(); }
 function exportOldBalances(){
   let keys=Object.keys(localStorage).filter(k=>k.startsWith('old_balances_'));
   if(keys.length==0){alert('لا يوجد أرصدة قديمة - طبق رصيد 26 ديسمبر أولا');return;}
   let lastKey=keys.sort().pop();
   let data=JSON.parse(localStorage.getItem(lastKey)||'{}');
-  let rows=[];
-  rows.push(["كود الموظف","اسم الموظف","النوع","الإدارة","المتبقي من الرصيد (قديم)","تاريخ التعيين","سنوات الخدمة","تاريخ الحفظ"]);
-  for(let code in data){
-    let d=data[code];
-    rows.push([code,d.name,d.type,d.dept,d.oldBalance,d.hire,d.tenure,d.date]);
-  }
-  let ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:12},{wch:22},{wch:10},{wch:18},{wch:20},{wch:14},{wch:12},{wch:14}];
-  let wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"أرصدة قديمة - مقيمين فلوس");
-  XLSX.writeFile(wb, `ارصدة_قديمة_مقيمين_فلوس_${lastKey}.xlsx`);
+  let rows=[["كود الموظف","اسم الموظف","النوع","الإدارة","المتبقي من الرصيد (قديم)","تاريخ التعيين","سنوات الخدمة"]];
+  for(let code in data){ let d=data[code]; rows.push([code,d.name,d.type,d.dept,d.oldBalance,d.hire,d.tenure]); }
+  let ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:12},{wch:22},{wch:10},{wch:18},{wch:20},{wch:14},{wch:12}];
+  let wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"مقيمين - فلوس قديمة"); XLSX.writeFile(wb, `ارصدة_قديمة_مقيمين_فلوس_${lastKey}.xlsx`);
 }
 function exportAllResidents(){
   if(!hasData){alert('لا يوجد بيانات');return;}
-  let residents=employees.filter(e=>!String(e.type).includes('مغترب'));
-  if(residents.length==0) residents=employees.filter(e=>String(e.type).includes('مقيم'));
-  let rows=[];
-  rows.push(["كود الموظف","اسم الموظف","النوع","الإدارة","المتبقي من الرصيد","تاريخ التعيين","سنوات الخدمة"]);
-  residents.forEach(emp=>{
-    let finalBal=getFinalBalance(emp);
-    let tenure=getTenureYears(emp.hire).toFixed(1);
-    rows.push([emp.code,emp.name,emp.type,emp.dept,finalBal,emp.hire,tenure]);
-  });
-  let ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:12},{wch:22},{wch:10},{wch:18},{wch:16},{wch:14},{wch:12}];
-  let wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"أرصدة مقيمين حالية");
-  XLSX.writeFile(wb, `ارصدة_مقيمين_حالية_${new Date().toISOString().slice(0,10)}.xlsx`);
+  let residents=employees.filter(e=>String(e.type).includes('مقيم'));
+  let rows=[["كود الموظف","اسم الموظف","النوع","الإدارة","المتبقي من الرصيد","تاريخ التعيين","سنوات الخدمة"]];
+  residents.forEach(emp=>{ let finalBal=getFinalBalance(emp); let tenure=getTenureYears(emp.hire).toFixed(1); rows.push([emp.code,emp.name,emp.type,emp.dept,finalBal,emp.hire,tenure]); });
+  let ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:12},{wch:22},{wch:10},{wch:18},{wch:16},{wch:14},{wch:12}];
+  let wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"أرصدة مقيمين حالية"); XLSX.writeFile(wb, `ارصدة_مقيمين_حالية_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 function checkAnnualAndMonthly(){ checkMonthlyAuto(); }
-function forceMonthlyUpdate(){ localStorage.removeItem('last_auto_month'); checkMonthlyAuto(); alert('تمت الزيادة'); renderAdmin(); }
+function forceMonthlyUpdate(){ localStorage.removeItem('last_auto_month'); checkMonthlyAuto(); alert('تمت الزيادة - مغترب 5 أيام و 6 للي كمل 10 سنين حتى شهر 9'); renderAdmin(); }
 function getFinalBalance(emp){ let base=getBaseBalance(emp); let adj=(adjustments[String(emp.code)]||[]).reduce((s,a)=>s+parseFloat(a.amount||0),0); return base+adj; }
-function searchByCode(){ let code=document.getElementById('empCodeOnly').value.trim(); let out=document.getElementById('empResult'); let emp=employees.find(e=>String(e.code)===String(code)); if(!emp){out.innerHTML='❌ الكود غير موجود';return;} let finalBal=getFinalBalance(emp); out.innerHTML=`<div class="card" style="border:2px solid #10b981"><b>${emp.code} - ${emp.name}</b><br><small>${emp.dept} | ${emp.type}</small><div class="balance-big">${finalBal.toFixed(1)}</div></div>`; }
+function searchByCode(){ let code=document.getElementById('empCodeOnly').value.trim(); let emp=employees.find(e=>String(e.code)===String(code)); if(!emp){document.getElementById('empResult').innerHTML='❌ الكود غير موجود';return;} let finalBal=getFinalBalance(emp); document.getElementById('empResult').innerHTML=`<div class="card" style="border:2px solid #10b981"><b>${emp.code} - ${emp.name}</b><br><small>${emp.dept} | ${emp.type}</small><div class="balance-big">${finalBal.toFixed(1)}</div></div>`; }
 function loginAdmin(){ let p=document.getElementById('adminPass').value; if(!_0xCheck(p)){alert('كلمة السر غير صحيحة');return;} document.getElementById('adminContent').style.display='block'; renderAdmin(); }
 function adjustBalance(){ let code=document.getElementById('adjCode').value.trim(); let amount=parseFloat(document.getElementById('adjAmount').value); let reason=document.getElementById('adjReason').value.trim()||'تحويل إضافي يدوي'; if(!code||isNaN(amount)){alert('اكتب الكود والمبلغ');return;} if(!adjustments[code]) adjustments[code]=[]; adjustments[code].push({amount:amount,reason:reason,date:new Date().toISOString().slice(0,10)}); localStorage.setItem('egazat_adjustments',JSON.stringify(adjustments)); renderAdmin(); }
-function renderAdmin(){ if(!hasData)return; let q=(document.getElementById('adminSearch').value||'').toLowerCase(); let filtered=employees.filter(e=>!q||String(e.code).includes(q)||e.name.toLowerCase().includes(q)); let html=`<table><tr><th>كود</th><th>اسم</th><th>نوع</th><th>إدارة</th><th>متبقي</th></tr>`; filtered.slice(0,150).forEach(emp=>{ let finalBal=getFinalBalance(emp); html+=`<tr><td>${emp.code}</td><td>${emp.name.slice(0,18)}</td><td>${emp.type}</td><td>${emp.dept.slice(0,12)}</td><td style="font-weight:900">${finalBal.toFixed(1)}</td></tr>`; }); html+=`</table>`; document.getElementById('adminList').innerHTML=html; }
-function clearAllData(){ if(confirm('مسح كل البيانات؟')){ localStorage.clear(); employees=[]; adjustments={}; hasData=false; } }
+function deductLeave(){ let code=document.getElementById('leaveCode').value.trim(); let days=parseFloat(document.getElementById('leaveDays').value); let date=document.getElementById('leaveDate').value||new Date().toISOString().slice(0,10); let type=document.getElementById('leaveType').value; let reason=document.getElementById('leaveReason').value.trim(); if(!code||isNaN(days)){alert('اكتب الكود وعدد الأيام');return;} let emp=employees.find(e=>String(e.code)===String(code)); if(!emp){alert('الكود غير موجود');return;} if(!adjustments[code]) adjustments[code]=[]; adjustments[code].push({amount:-days,reason:`خصم إجازة: ${type} - ${days} يوم - ${date} ${reason}`,date:date}); localStorage.setItem('egazat_adjustments',JSON.stringify(adjustments)); document.getElementById('leaveResult').innerHTML=`<div class="alert alert-green">✅ تم خصم ${days} يوم من ${emp.name} (${emp.type}) - الجديد ${getFinalBalance(emp).toFixed(1)}</div>`; renderAdmin(); }
+function renderAdmin(){ if(!hasData){document.getElementById('adminList').innerHTML='<div class="alert alert-red">ارفع الشيت</div>';return;} let q=(document.getElementById('adminSearch').value||'').toLowerCase(); let filtered=employees.filter(e=>!q||String(e.code).includes(q)||e.name.toLowerCase().includes(q)||e.dept.toLowerCase().includes(q)); let html=`<table><tr><th>كود</th><th>الاسم</th><th>النوع</th><th>الإدارة</th><th>متبقي</th></tr>`; filtered.slice(0,200).forEach(emp=>{ let finalBal=getFinalBalance(emp); let isMog=String(emp.type).includes('مغترب'); html+=`<tr><td>${emp.code}</td><td style="text-align:right;font-size:9px">${emp.name.slice(0,20)}</td><td><span class="badge ${isMog?'badge-moght':'badge-moqim'}">${isMog?'مغترب':'مقيم'}</span></td><td style="font-size:8px">${emp.dept.slice(0,14)}</td><td style="font-weight:900;background:${finalBal<2?'#7f1d1d':'#065f46'}">${finalBal.toFixed(1)}</td></tr>`; }); html+=`</table>`; document.getElementById('adminList').innerHTML=html; }
 loadStored();
 </script>
 </body>
