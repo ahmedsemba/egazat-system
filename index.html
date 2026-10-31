@@ -1,87 +1,13 @@
-<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>إدارة رصيد الإجازات - البروي - العبور</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&display=swap" rel="stylesheet"><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><style>*{font-family:Cairo,sans-serif;box-sizing:border-box}body{margin:0;background:#0f172a;color:#fff}.card{background:#1e293b;margin:10px;padding:14px;border-radius:12px;border:1px solid #334155}input{width:100%;padding:11px;border-radius:9px;border:1px solid #334155;background:#0f172a;color:#fff;margin:5px 0}button{padding:11px;border-radius:9px;border:none;background:#10b981;color:#fff;font-weight:800;cursor:pointer;margin:4px 0;width:100%}.btn-blue{background:#6366f1}.btn-orange{background:#f59e0b;color:#000}.btn-red{background:#ef4444}.btn-green{background:#10b981}.alert-green{background:#065f46;border:1px solid #10b981;padding:9px;border-radius:9px;margin:7px 0;font-size:12px}.alert-blue{background:#1e3a8a;border:1px solid #6366f1;padding:9px;border-radius:9px;margin:7px 0;font-size:12px}</style></head><body>
-<div style="background:linear-gradient(135deg,#0f172a,#4f46e5);padding:16px;text-align:center;border-bottom:3px solid #10b981"><h3 style="margin:0">🏭 إدارة رصيد الإجازات</h3><small>شركة البروي لصناعة الغازات - مصنع العبور</small></div>
-<div style="padding:10px">
-<div class="card" style="text-align:center;border:2px solid #10b981"><input id="empCodeOnly" type="tel" placeholder="اكتب كودك" style="text-align:center;font-size:22px;font-weight:900"><button onclick="searchByCode()">🔍 عرض رصيدي ومدة خدمتي</button><div id="empResult"></div></div>
-<div class="card" id="dataStatus"></div>
-<div class="card"><b>🔐 إدارة</b><input id="adminPass" type="password" placeholder="••••••••"><button class="btn-blue" onclick="login()">دخول</button>
-<div id="configArea" style="display:none;background:#0f172a;padding:10px;border-radius:10px;margin-top:10px;border:1px dashed #334155"><small>إعداد أول مرة</small><input id="ghToken" type="password" placeholder="••••••••"><button class="btn-blue" onclick="saveToken()">💾 حفظ وإخفاء</button><div id="tokenStatus"></div></div>
-<div id="adminArea" style="display:none;margin-top:10px">
-<div class="card" style="background:#0f172a;border:2px dashed #10b981;margin:0 0 10px 0"><b>📂 رفع الشيت - مطابق للصورة اللي بعتها</b><small style="display:block;opacity:0.8;margin-bottom:5px">الشيت: A=كود B=اسم C=إدارة D=نوع E=تاريخ التعيين F=الرصيد</small><input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none" onchange="handleExcel(event)"><button class="btn-blue" onclick="document.getElementById('excelFile').click()">اختر نفس الشيت اللي في الصورة وارفعه</button><button class="btn-green" onclick="uploadToGitHub()">☁️ رفع على GitHub - هيظهر تاريخ التعيين فورا</button><div id="uploadStatus"></div><div id="parseLog"></div></div>
-<div class="card" style="background:#0f172a;border:2px solid #f59e0b;margin:0 0 10px 0"><b>⚙️ زيادات وتصفية</b><button class="btn-orange" onclick="applyMonthlyIncrease()">⚡ زيادة يوم 26 - 5 للمغترب / 6 لو 10 سنين</button><button onclick="applyAnnualReset()" style="background:linear-gradient(135deg,#ef4444,#f59e0b)">📅 تصفية 26 ديسمبر</button><div id="annualResult"></div></div>
-<div class="card" style="background:#0f172a;border:2px solid #10b981;margin:0 0 10px 0"><b>➕ تحويل إضافي</b><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input id="adjCode" placeholder="كود: 1017"><input id="adjAmount" type="number" step="0.5" placeholder="+2 أو -1"></div><input id="adjReason" placeholder="السبب"><button class="btn-green" onclick="editBalance()">✅ زود / نقص</button></div>
-<div class="card" style="background:#0f172a;border:2px solid #ef4444;margin:0"><b>➖ خصم إجازة - بالتاريخ من كام لكام</b><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input id="leaveCode" placeholder="كود"><input id="leaveFrom" type="date"><input id="leaveTo" type="date"><input id="leaveDays" type="number" step="0.5" placeholder="أيام"></div><button class="btn-red" onclick="addLeave()">➖ خصم</button><div id="leaveResult"></div></div>
-<div class="card" style="margin:10px 0 0 0"><input id="adminSearch" placeholder="بحث - دلوقتي هيظهر تاريخ التعيين" oninput="renderAdmin()"><div id="adminList"></div><div id="historyView"></div></div>
-</div></div>
+<div class="card" style="background:#0f172a;border:2px solid #10b981;margin:0 0 10px 0">
+<b>➕ إضافة موظف جديد من الموقع (مع كل الشغل القديم)</b>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+<input id="newCode" placeholder="كود جديد: 1045">
+<input id="newName" placeholder="الاسم: محمد أحمد">
+<input id="newDept" placeholder="الإدارة: السائقين">
+<select id="newType"><option value="مقيم">مقيم - رصيده بعد 6 شهور</option><option value="مغترب">مغترب - من أول شهر</option></select>
+<input id="newHire" type="date">
 </div>
-<script>
-let employees=[],hasData=false;
-function getGH(){ return {user:'ahmedsemba', repo:'egazat-system', token:localStorage.getItem('gh_token')||''} }
-function saveToken(){ let t=document.getElementById('ghToken').value.trim(); if(!t){alert('حط التوكن');return;} localStorage.setItem('gh_token',t); document.getElementById('tokenStatus').innerHTML='<div class="alert-green">✅ اتحفظ</div>'; setTimeout(()=>{ document.getElementById('configArea').style.display='none'; },800); }
-function login(){ let p=document.getElementById('adminPass').value; const K=[65,104,109,101,100,64,115,97,108,119,97,50,48,50,48]; let ok=p.length===K.length; if(ok) for(let i=0;i<K.length;i++) if(p.charCodeAt(i)!==K[i]) ok=false; if(!ok){alert('الباسورد غلط');return;} let hasToken=localStorage.getItem('gh_token'); if(!hasToken){ document.getElementById('configArea').style.display='block'; document.getElementById('adminArea').style.display='none'; return; } document.getElementById('configArea').style.display='none'; document.getElementById('adminArea').style.display='block'; loadFromGitHub(); }
-function getTenureYears(h){ if(!h) return 0; try{ let d=new Date(h); if(isNaN(d)) return 0; return (new Date()-d)/(1000*60*60*24*365.25);}catch(e){return 0;} }
-function formatTenure(hireStr){
- if(!hireStr) return {text:'❌ تاريخ التعيين مش متسجل', years:0, remaining:'المفروض يظهر من الشيت - ارفع الشيت تاني'};
- try{ let hire=new Date(hireStr); if(isNaN(hire)) return {text:'❌ تاريخ التعيين مش متسجل', years:0, remaining:''}; let now=new Date(); let totalDays=Math.floor((now-hire)/(1000*60*60*24)); let years=Math.floor(totalDays/365.25); let months=Math.floor((totalDays%365.25)/30.44); let remainingText=''; if(years>=10){ remainingText=`✅ كملت 10 سنين - ليك 30 يوم`; } else { let targetDate=new Date(hire); targetDate.setFullYear(hire.getFullYear()+10); let remMs=targetDate-now; let remDays=Math.ceil(remMs/(1000*60*60*24)); let remMonths=Math.floor(remDays/30.44); let remY=Math.floor(remMonths/12); let remM=remMonths%12; remainingText=`⏳ فاضلك ${remY>0?remY+' سنة و ':''}${remM} شهر وتكمل 10 سنين - هتكمل في ${targetDate.toLocaleDateString('ar-EG')}`; } return {text:`📅 متعين من ${hire.toLocaleDateString('ar-EG')} - بقالك ${years} سنة و ${months} شهر`, years:years, remaining:remainingText}; }catch(e){ return {text:'❌ مش متسجل', years:0, remaining:''}; }
-}
-function parseDateValue(v){
- if(!v) return null;
- if(v instanceof Date && !isNaN(v)) return v;
- if(typeof v==='number' && v>20000 && v<60000){ try{ let d=new Date((v-25569)*86400*1000); if(!isNaN(d) && d.getFullYear()>1970) return d; }catch(e){} }
- if(typeof v==='string'){
-   let s=v.trim();
-   // 08/07/2009 أو 08-07-2009
-   let m=s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
-   if(m){ let y=parseInt(m[3]); if(y<100) y+=2000; let d=new Date(y, parseInt(m[2])-1, parseInt(m[1])); if(!isNaN(d)) return d; }
-   let d=new Date(s); if(!isNaN(d)) return d;
- }
- return null;
-}
-function parseWorkbook(wb){
- let emps=[]; let withDate=0, withoutDate=0; let debug='';
- wb.SheetNames.forEach(sn=>{
-   let ws=wb.Sheets[sn]; let rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:false});
-   let rowsRaw=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true});
-   for(let r=1;r<rows.length;r++){
-     let row=rows[r]; let rowRaw=rowsRaw[r];
-     if(!row||row[0]==null) continue;
-     let code=parseInt(rowRaw[0]||row[0]); if(isNaN(code)) continue;
-     let name=row[1]||rowRaw[1]; let dept=row[2]||rowRaw[2]; let type=row[3]||rowRaw[3];
-     let hireVal=rowRaw[4]!==undefined?rowRaw[4]:row[4]; // E = تاريخ التعيين
-     let balVal=rowRaw[5]!==undefined?rowRaw[5]:row[5]; // F = الرصيد الحالي
-     if(!name) continue;
-     let b=0; if(balVal!=null){ let v=parseFloat(String(balVal).replace(',','.')); if(!isNaN(v)) b=v; }
-     let hd=parseDateValue(hireVal);
-     let hireStr=hd&&!isNaN(hd)?hd.toISOString().slice(0,10):'';
-     if(hireStr) withDate++; else withoutDate++;
-     if(r<4) debug+=`صف ${r}: كود=${code} اسم=${name} تاريخ خام=${hireVal} -> ${hireStr} رصيد=${b}<br>`;
-     emps.push({code:code,name:String(name).trim(),dept:String(dept||'السائقين').trim(),type:String(type||'مقيم').trim(),hire:hireStr,balance:b,history:[]});
-   }
- });
- employees=emps; hasData=true;
- document.getElementById('uploadStatus').innerHTML=`<div class="alert-green">✅ ${emps.length} موظف جاهز - ${withDate} بتاريخ تعيين - ${withoutDate} من غير</div>`;
- document.getElementById('parseLog').innerHTML=`<div class="alert-blue" style="margin-top:8px">تجربة قراءة أول 3 صفوف:<br>${debug}<br>لو كله بتاريخ يبقى تمام دوس رفع على GitHub</div>`;
-}
-function handleExcel(e){ let f=e.target.files[0]; if(!f) return; let r=new FileReader(); r.onload=function(evt){ let d=new Uint8Array(evt.target.result); let wb=XLSX.read(d,{type:'array',cellDates:true}); parseWorkbook(wb); }; r.readAsArrayBuffer(f); }
-async function loadFromGitHub(){ let {user,repo}=getGH(); document.getElementById('dataStatus').innerHTML='<div class="alert-blue">⏳ تحميل...</div>'; try{ let res=await fetch(`https://raw.githubusercontent.com/${user}/${repo}/main/data.json?${Date.now()}`,{cache:'no-store'}); let txt=await res.text(); if(!res.ok||!txt||txt.trim()=='[]'||txt.trim()=='' ){ document.getElementById('dataStatus').innerHTML='<div class="alert-blue">السحابة فاضية - ارفع الشيت اللي في الصورة</div>'; return; } let data=JSON.parse(txt); employees=Array.isArray(data)?data:[]; hasData=employees.length>0; if(hasData){ let withHire=employees.filter(e=>e.hire).length; document.getElementById('dataStatus').innerHTML=`<div class="${withHire==0?'alert-blue':'alert-green'}">✅ ${employees.length} محمل من السحابة - ${withHire} بتاريخ تعيين ✅ - ${employees.length-withHire} من غير</div>`; renderAdmin(); } }catch(e){} }
-async function uploadToGitHub(){ if(!hasData){alert('اختر الشيت أولاً');return;} let {user,repo,token}=getGH(); if(!token){alert('حط التوكن');return;} document.getElementById('uploadStatus').innerHTML='<div class="alert-blue">⏳ بيرفع...</div>'; try{ let getRes=await fetch(`https://api.github.com/repos/${user}/${repo}/contents/data.json`,{headers:{'Authorization':`token ${token}`}}); let sha=null; if(getRes.ok){ let j=await getRes.json(); sha=j.sha; } let content=btoa(unescape(encodeURIComponent(JSON.stringify(employees)))); let putRes=await fetch(`https://api.github.com/repos/${user}/${repo}/contents/data.json`,{method:'PUT',headers:{'Authorization':`token ${token}`,'Content-Type':'application/json'},body:JSON.stringify({message:`رفع شيت بالتواريخ`,content:content,sha:sha})}); if(putRes.ok){ document.getElementById('uploadStatus').innerHTML=`<div class="alert-green">✅ اترفع! دلوقتي كلهم هيظهروا بتاريخ التعيين</div>`; setTimeout(loadFromGitHub,2000); } }catch(e){} }
-async function saveToGitHub(){ let {user,repo,token}=getGH(); if(!token) return; try{ let getRes=await fetch(`https://api.github.com/repos/${user}/${repo}/contents/data.json`,{headers:{'Authorization':`token ${token}`}}); let sha=null; if(getRes.ok){ let j=await getRes.json(); sha=j.sha; } let content=btoa(unescape(encodeURIComponent(JSON.stringify(employees)))); await fetch(`https://api.github.com/repos/${user}/${repo}/contents/data.json`,{method:'PUT',headers:{'Authorization':`token ${token}`,'Content-Type':'application/json'},body:JSON.stringify({message:`تعديل`,content:content,sha:sha})}); }catch(e){} }
-async function editBalance(){ let code=document.getElementById('adjCode').value.trim(); let amount=parseFloat(document.getElementById('adjAmount').value); let reason=document.getElementById('adjReason').value||'تحويل إضافي'; if(!code||isNaN(amount)){alert('اكتب الكود والمبلغ');return;} let emp=employees.find(e=>String(e.code)===String(code)); if(!emp){alert('الكود غير موجود');return;} emp.balance+=amount; if(emp.balance<0) emp.balance=0; emp.history=emp.history||[]; emp.history.push({id:Date.now(), date:new Date().toISOString().slice(0,10), amount:amount, reason:reason}); await saveToGitHub(); alert(`✅ ${emp.name} الجديد ${emp.balance}`); renderAdmin(); }
-function calcDays(){ let f=document.getElementById('leaveFrom').value; let t=document.getElementById('leaveTo').value; if(f&&t){ let d1=new Date(f); let d2=new Date(t); let diff=Math.round((d2-d1)/(1000*60*60*24))+1; if(diff>0) document.getElementById('leaveDays').value=diff; } }
-document.getElementById('leaveFrom').addEventListener('change',calcDays); document.getElementById('leaveTo').addEventListener('change',calcDays);
-async function addLeave(){ let code=document.getElementById('leaveCode').value.trim(); let from=document.getElementById('leaveFrom').value; let to=document.getElementById('leaveTo').value; let days=parseFloat(document.getElementById('leaveDays').value); if(!code||isNaN(days)){alert('اكتب الكود والأيام');return;} let emp=employees.find(e=>String(e.code)===String(code)); if(!emp){alert('غير موجود');return;} emp.balance-=days; if(emp.balance<0) emp.balance=0; emp.history=emp.history||[]; emp.history.push({id:Date.now(), date:new Date().toISOString().slice(0,10), amount:-days, reason:`إجازة ${days} يوم`, from:from||'', to:to||''}); await saveToGitHub(); document.getElementById('leaveResult').innerHTML=`<div class="alert-green">✅ خصم ${days}</div>`; renderAdmin(); }
-function searchByCode(){
- let c=document.getElementById('empCodeOnly').value.trim();
- let emp=employees.find(e=>String(e.code)===c);
- if(!emp){ document.getElementById('empResult').innerHTML='❌ غير موجود'; return; }
- let currentYear=new Date().getFullYear().toString();
- let yearHistory=(emp.history||[]).filter(h=>String(h.date).startsWith(currentYear) && h.amount<0);
- let takenThisYear=0; yearHistory.forEach(h=>{ takenThisYear+=Math.abs(h.amount); });
- let tenure=formatTenure(emp.hire);
- let tenureHtml=`<div style="background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid #f59e0b;padding:10px;border-radius:10px;margin-top:10px;text-align:right"><b style="color:#f59e0b">⏰ مدة خدمتك</b><br>${tenure.text}<br><small style="color:#10b981">${tenure.remaining}</small></div>`;
- document.getElementById('empResult').innerHTML=`<div style="background:#065f46;padding:12px;border-radius:10px;text-align:center"><b>${emp.code} - ${emp.name}</b><div style="font-size:44px;font-weight:900;color:#10b981">${emp.balance.toFixed(1)}</div><div>الرصيد المتبقي</div>${tenureHtml}</div>`;
-}
-function renderAdmin(){ if(!hasData){document.getElementById('adminList').innerHTML='فاضي';return;} let q=(document.getElementById('adminSearch').value||'').toLowerCase(); let filtered=employees.filter(e=>!q||String(e.code).includes(q)||e.name.toLowerCase().includes(q)); let html=`<table style="width:100%;border-collapse:collapse;background:#0f172a"><tr><th style="padding:6px;border:1px solid #334155">كود</th><th style="padding:6px;border:1px solid #334155">اسم</th><th style="padding:6px;border:1px solid #334155">رصيد</th><th style="padding:6px;border:1px solid #334155">تاريخ تعيين</th></tr>`; filtered.slice(0,200).forEach(emp=>{ let hireDisplay=emp.hire?new Date(emp.hire).toLocaleDateString('ar-EG'):`<span style="color:#ef4444">مش متسجل</span>`; html+=`<tr><td style="padding:6px;border:1px solid #334155">${emp.code}</td><td style="padding:6px;border:1px solid #334155;font-size:9px">${emp.name.slice(0,18)}</td><td style="padding:6px;border:1px solid #334155;background:#065f46;font-weight:900">${emp.balance.toFixed(1)}</td><td style="padding:6px;border:1px solid #334155;font-size:9px">${hireDisplay}</td></tr>`; }); html+=`</table>`; document.getElementById('adminList').innerHTML=html; }
-async function applyMonthlyIncrease(){ if(!confirm('هتزود 5 للمغترب و 6 لو كمل 10 سنين حتى شهر 9؟')) return; for(let emp of employees){ let tenure=getTenureYears(emp.hire); let month=new Date().getMonth()+1; let isMog=String(emp.type).includes('مغترب'); let add=0; if(isMog){ add=5; if(tenure>=10&&month>=1&&month<=9) add=6; } else { if(tenure>=10&&month>=1&&month<=9) add=1; } if(add>0){ emp.balance+=add; emp.history=emp.history||[]; emp.history.push({id:Date.now()+Math.random(), date:new Date().toISOString().slice(0,10), amount:add, reason:`زيادة شهرية يوم 26 - ${add}`}); } } await saveToGitHub(); alert('✅ تمت الزيادة'); renderAdmin(); }
-async function applyAnnualReset(){ if(!confirm('تصفية 26 ديسمبر؟')) return; let payoutList=[]; for(let emp of employees){ let isMog=String(emp.type).toLowerCase().includes('مغترب'); if(!isMog){ if(emp.balance>0){ payoutList.push({الكود:emp.code, الاسم:emp.name, الرصيد_القديم_للصرف_فلوس:emp.balance, الرصيد_الجديد: getTenureYears(emp.hire)>=10?30:21}); } } } if(payoutList.length>0){ let ws=XLSX.utils.json_to_sheet(payoutList); let wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"تصفية"); XLSX.writeFile(wb,`تصفية_مقيمين_${new Date().toISOString().slice(0,10)}.xlsx`); } for(let emp of employees){ let isMog=String(emp.type).toLowerCase().includes('مغترب'); if(!isMog){ let tenure=getTenureYears(emp.hire); let newAnnual=tenure>=10?30:21; let old=emp.balance; emp.balance=newAnnual; emp.history.push({id:Date.now()+Math.random(), date:new Date().toISOString().slice(0,10), amount:newAnnual-old, reason:`تصفية سنوية`}); } } await saveToGitHub(); renderAdmin(); }
-setTimeout(loadFromGitHub,800);
-</script></body></html>
+<small style="opacity:0.8">لو مقيم: رصيده هيبقى 0 لحد ما يكمل 6 شهور وبعدين النظام هيضيفله لوحده يوم 26 - لو مغترب: هياخد 5 أيام من أول شهر</small>
+<button class="btn-green" onclick="addNewEmployee()">➕ إضافة الموظف وحفظه على السحابة</button>
+<div id="addEmpResult"></div>
+</div>
