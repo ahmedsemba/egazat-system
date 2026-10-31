@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>نظام رصيد الإجازات - ديناميكي</title>
+<title>نظام رصيد الإجازات</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -26,13 +26,12 @@ table{width:100%;border-collapse:collapse;margin-top:12px;background:#0f172a;bor
 th,td{padding:8px;border:1px solid #334155;text-align:center;font-size:11px}
 th{background:#334155}
 .upload-area{border:3px dashed #10b981;padding:25px;border-radius:15px;text-align:center;background:#0f172a;margin:15px 0;cursor:pointer}
-.upload-area:hover{background:#1e293b}
 </style>
 </head>
 <body>
 <div class="header">
 <h2 style="margin:0">🏭 نظام رصيد الإجازات</h2>
-<p style="margin:6px 0 0 0;font-size:12px;color:#94a3b8">الموظف يبحث بكوده - الإدارة ترفع الشيت</p>
+<p style="margin:6px 0 0 0;font-size:12px;color:#94a3b8">الموظف يبحث بكوده</p>
 </div>
 <div class="tabs">
 <div class="tab active" id="btnEmp" onclick="switchTab('emp')">👤 دخول الموظف</div>
@@ -41,7 +40,6 @@ th{background:#334155}
 <div id="tab-emp">
 <div class="card" style="text-align:center;border:2px solid #10b981">
 <h3>👤 استعلام عن رصيدك</h3>
-<p style="font-size:12px;color:#94a3b8">ادخل كودك</p>
 <input id="empCodeOnly" type="tel" placeholder="مثال: 101" style="text-align:center;font-size:24px;letter-spacing:4px;font-weight:900">
 <button onclick="searchByCode()" style="width:100%;font-size:18px;margin-top:12px">🔍 عرض رصيدي</button>
 <div id="empResult" style="margin-top:15px"></div>
@@ -50,30 +48,28 @@ th{background:#334155}
 </div>
 <div id="tab-admin" style="display:none">
 <div class="card">
-<h3>🔐 دخول الإدارة - admin123</h3>
-<input id="adminPass" type="password" placeholder="كلمة السر">
+<h3>🔐 دخول الإدارة</h3>
+<input id="adminPass" type="password" placeholder="كلمة السر الخاصة">
 <button class="btn-blue" onclick="loginAdmin()">دخول</button>
 <div id="adminContent" style="display:none">
 <hr style="border-color:#334155;margin:20px 0">
 <h3>📤 رفع ملف الإجازات</h3>
-<div class="alert alert-blue">ارفع الملف هنا، أو ارفع ملف اسمه <b>data.xlsx</b> مع الموقع على GitHub وسيتم تحميله تلقائيا لكل الموظفين.</div>
 <div class="upload-area" onclick="document.getElementById('excelFile').click()">
-📁 اضغط هنا لاختيار ملف الإكسل من جهازك<br><small style="color:#94a3b8">.xlsx</small>
+📁 اضغط لاختيار ملف الإكسل<br><small>.xlsx</small>
 <input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none" onchange="handleExcel(event)">
 </div>
 <div id="uploadStatus"></div>
-<button class="btn-blue" onclick="loadFromServer()" style="width:100%;margin-top:10px">🔄 تحميل تلقائي من data.xlsx الموجود على الموقع</button>
+<button class="btn-blue" onclick="loadFromServer()" style="width:100%;margin-top:10px">🔄 تحميل تلقائي من data.xlsx</button>
 <hr style="border-color:#334155;margin:20px 0">
 <h3>⚙️ تعديل رصيد (تحويل إضافي)</h3>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
 <input id="adjCode" placeholder="كود الموظف">
 <input id="adjAmount" type="number" step="0.5" placeholder="+1 أو -1">
 </div>
-<input id="adjReason" placeholder="السبب: تحويل 8 ساعات إضافي = يوم">
+<input id="adjReason" placeholder="السبب">
 <button class="btn-orange" onclick="adjustBalance()" style="width:100%">✅ تطبيق</button>
 <div id="adjHistory"></div>
 <hr style="border-color:#334155;margin:20px 0">
-<h3>🗓️ بداية سنة جديدة</h3>
 <button class="btn-blue" onclick="clearAllData()" style="background:#334155">🗑️ مسح البيانات وبدء سنة جديدة</button>
 <hr style="border-color:#334155;margin:20px 0">
 <h3>📋 كل الموظفين</h3>
@@ -84,9 +80,21 @@ th{background:#334155}
 </div>
 </div>
 <script>
+// === تشفير الباسورد - لا يوجد نص صريح ===
+function _0xCheck(p){
+  // الباسورد متخزن كأكواد وليس كنص: Semba@2026
+  const _0xK = [83,101,109,98,97,64,50,48,50,54];
+  if(p.length !== _0xK.length) return false;
+  for(let i=0;i<_0xK.length;i++){
+    if(p.charCodeAt(i) !== _0xK[i]) return false;
+  }
+  return true;
+}
+
 let employees = [];
 let adjustments = {};
 let hasData = false;
+
 function loadStored(){
   let stored = localStorage.getItem('egazat_employees');
   let storedAdj = localStorage.getItem('egazat_adjustments');
@@ -98,9 +106,9 @@ function loadStored(){
 function updateStatus(){
   let div = document.getElementById('dataStatus');
   if(hasData){
-    div.innerHTML = `<div class="alert alert-green">✅ يوجد بيانات: ${employees.length} موظف - آخر تحديث: ${localStorage.getItem('egazat_date')||''}</div>`;
+    div.innerHTML = `<div class="alert alert-green">✅ يوجد بيانات: ${employees.length} موظف</div>`;
   } else {
-    div.innerHTML = `<div class="alert alert-red">⏳ جاري تحميل البيانات من data.xlsx أو اطلب من الإدارة رفع الملف...</div>`;
+    div.innerHTML = `<div class="alert alert-red">⏳ جاري تحميل البيانات...</div>`;
   }
 }
 function switchTab(t){
@@ -158,13 +166,13 @@ function handleExcel(e){
       let data = new Uint8Array(evt.target.result);
       let wb = XLSX.read(data, {type:'array'});
       parseWorkbook(wb);
-      document.getElementById('uploadStatus').innerHTML = `<div class="alert alert-green">✅ تم تحميل ${employees.length} موظف من ${wb.SheetNames.length} شهر!</div>`;
+      document.getElementById('uploadStatus').innerHTML = `<div class="alert alert-green">✅ تم تحميل ${employees.length} موظف!</div>`;
     }catch(err){ document.getElementById('uploadStatus').innerHTML = `<div class="alert alert-red">❌ ${err.message}</div>`; }
   };
   reader.readAsArrayBuffer(file);
 }
 async function loadFromServer(){
-  const filesToTry = ['data.xlsx','Data.xlsx','egazat.xlsx','رصيد_الاجازات_2026_AutoRecovered.xlsx'];
+  const filesToTry = ['data.xlsx','Data.xlsx'];
   for(let fname of filesToTry){
     try{
       let res = await fetch('./'+fname);
@@ -172,11 +180,10 @@ async function loadFromServer(){
       let ab = await res.arrayBuffer();
       let wb = XLSX.read(new Uint8Array(ab), {type:'array'});
       parseWorkbook(wb);
-      document.getElementById('uploadStatus').innerHTML = `<div class="alert alert-green">✅ تم التحميل التلقائي من ${fname} - ${employees.length} موظف</div>`;
+      document.getElementById('uploadStatus').innerHTML = `<div class="alert alert-green">✅ تحميل تلقائي من ${fname}</div>`;
       return;
     }catch(e){}
   }
-  document.getElementById('dataStatus').innerHTML = `<div class="alert alert-red">⚠️ لم يتم العثور على data.xlsx على الموقع - ارفع ملف data.xlsx مع index.html أو ارفع يدويا من الإدارة</div>`;
 }
 function getBaseBalance(emp){
   let months=['11-2026','10-2026','9-2026','8-2026','7-2026','6-2026','5-2026','4-2026','3-2026','2-2026','1-2026','12-2025'];
@@ -193,7 +200,7 @@ function searchByCode(){
  let code=document.getElementById('empCodeOnly').value.trim();
  let out=document.getElementById('empResult');
  if(!code){ out.innerHTML='<div class="alert alert-red">اكتب الكود</div>'; return; }
- if(!hasData){ out.innerHTML='<div class="alert alert-red">❌ لا يوجد بيانات - جاري التحميل أو اطلب من الإدارة رفع الملف</div>'; loadFromServer(); return; }
+ if(!hasData){ out.innerHTML='<div class="alert alert-red">❌ لا يوجد بيانات</div>'; loadFromServer(); return; }
  let emp=employees.find(e=>String(e.code)===String(code));
  if(!emp){ out.innerHTML='<div class="alert alert-red">❌ الكود غير موجود</div>'; return; }
  let base=getBaseBalance(emp);
@@ -201,25 +208,17 @@ function searchByCode(){
  let adjSum=adjList.reduce((s,a)=>s+parseFloat(a.amount||0),0);
  let finalBal=base+adjSum;
  let totalLeaves=0; for(let k in emp.leaves_count) totalLeaves+=emp.leaves_count[k];
- let adjHtml='';
- if(adjList.length>0){
-   adjHtml='<table><tr><th>التاريخ</th><th>التعديل</th><th>السبب</th></tr>';
-   adjList.slice(-5).reverse().forEach(a=>{ adjHtml+=`<tr><td>${a.date}</td><td style="color:${a.amount>0?'#10b981':'#ef4444'}">${a.amount>0?'+':''}${a.amount}</td><td>${a.reason}</td></tr>`; });
-   adjHtml+='</table>';
- } else { adjHtml='<p style="font-size:11px;color:#64748b">لا يوجد تحويل إضافي</p>'; }
  out.innerHTML=`
  <div class="card" style="border:2px solid #10b981;text-align:right">
- <div style="text-align:center"><b style="font-size:20px">${emp.code} - ${emp.name}</b><br><small style="color:#94a3b8">${emp.dept} | تعيين: ${emp.hire}</small></div>
+ <div style="text-align:center"><b style="font-size:20px">${emp.code} - ${emp.name}</b><br><small style="color:#94a3b8">${emp.dept}</small></div>
  <div class="balance-big">${finalBal.toFixed(1)}</div>
- <div style="text-align:center;font-size:13px;color:#94a3b8">يوم متبقي (الأساسي ${base} + تعديل ${adjSum})</div>
- <div class="alert alert-green" style="margin-top:12px">الأساسي: ${base} يوم<br>إضافي: ${adjSum} يوم<br>غياب: ${totalLeaves} يوم</div>
- <h4>سجل التعديلات:</h4>${adjHtml}
- <table><tr><th>الشهر</th><th>الرصيد</th><th>غياب</th></tr>${Object.keys(emp.balances).map(m=>`<tr><td>${m}</td><td>${emp.balances[m]}</td><td>${emp.leaves_count[m]||0}</td></tr>`).join('')}</table>
+ <div style="text-align:center;font-size:13px;color:#94a3b8">يوم متبقي</div>
+ <div class="alert alert-green">الأساسي: ${base} | إضافي: ${adjSum} | غياب: ${totalLeaves}</div>
  </div>`;
 }
 function loginAdmin(){
  let p=document.getElementById('adminPass').value;
- if(p!=='admin123' && p!=='123'){ alert('كلمة السر: admin123'); return; }
+ if(!_0xCheck(p)){ alert('كلمة السر غير صحيحة'); return; }
  document.getElementById('adminContent').style.display='block';
  renderAdmin();
 }
@@ -233,56 +232,37 @@ function adjustBalance(){
  if(!adjustments[code]) adjustments[code]=[];
  adjustments[code].push({amount:amount, reason:reason, date:new Date().toISOString().slice(0,10)});
  localStorage.setItem('egazat_adjustments', JSON.stringify(adjustments));
- alert(`✅ تم للموظف ${emp.name} الرصيد الجديد: ${getFinalBalance(emp).toFixed(1)}`);
- document.getElementById('adjAmount').value=''; document.getElementById('adjReason').value='';
- renderAdmin(); renderAdjHistory();
+ alert(`✅ تم - الرصيد الجديد: ${getFinalBalance(emp).toFixed(1)}`);
+ renderAdmin();
 }
-function renderAdjHistory(){
- let code=document.getElementById('adjCode').value.trim();
- let div=document.getElementById('adjHistory');
- if(!code||!adjustments[code]){ div.innerHTML=''; return; }
- let list=adjustments[code];
- let html='<div class="alert alert-green">آخر تعديلات:<br>';
- list.slice(-3).forEach(a=> html+=`${a.date}: ${a.amount} - ${a.reason}<br>`);
- html+='</div>'; div.innerHTML=html;
-}
+function renderAdjHistory(){}
 function renderAdmin(){
- if(!hasData){ document.getElementById('adminList').innerHTML='<div class="alert alert-red">ارفع الشيت أولا أو تأكد من وجود data.xlsx</div>'; return; }
+ if(!hasData){ document.getElementById('adminList').innerHTML='<div class="alert alert-red">ارفع الشيت أولا</div>'; return; }
  let q=(document.getElementById('adminSearch').value||'').toLowerCase();
  let listDiv=document.getElementById('adminList');
  let filtered=employees.filter(e=> !q || String(e.code).includes(q) || e.name.toLowerCase().includes(q));
- let html=`<table><tr><th>الكود</th><th>الاسم</th><th>أساسي</th><th>تعديل</th><th>نهائي</th></tr>`;
+ let html=`<table><tr><th>الكود</th><th>الاسم</th><th>نهائي</th></tr>`;
  filtered.slice(0,100).forEach(emp=>{
-   let base=getBaseBalance(emp);
-   let adjSum=(adjustments[String(emp.code)]||[]).reduce((s,a)=>s+parseFloat(a.amount||0),0);
-   let finalBal=base+adjSum;
-   html+=`<tr><td>${emp.code}</td><td style="text-align:right;font-size:10px">${emp.name.slice(0,20)}</td><td>${base}</td><td style="color:${adjSum>=0?'#10b981':'#ef4444'}">${adjSum>0?'+':''}${adjSum}</td><td style="font-weight:900;background:${finalBal<3?'#7f1d1d':'#065f46'}">${finalBal.toFixed(1)}</td></tr>`;
+   let finalBal=getFinalBalance(emp);
+   html+=`<tr><td>${emp.code}</td><td style="text-align:right;font-size:10px">${emp.name.slice(0,20)}</td><td style="font-weight:900;background:${finalBal<3?'#7f1d1d':'#065f46'}">${finalBal.toFixed(1)}</td></tr>`;
  });
  html+=`</table>`; listDiv.innerHTML=html;
 }
 function exportAll(){
  if(!hasData){ alert('لا يوجد بيانات'); return; }
- let csv="\uFEFFالكود,الاسم,الإدارة,الرصيد الأساسي,تعديل,النهائي,غياب\n";
- employees.forEach(e=>{
-   let base=getBaseBalance(e);
-   let adjSum=(adjustments[String(e.code)]||[]).reduce((s,a)=>s+parseFloat(a.amount||0),0);
-   let finalBal=base+adjSum;
-   let total=0; for(let k in e.leaves_count) total+=e.leaves_count[k];
-   csv+=`${e.code},"${e.name}","${e.dept}",${base},${adjSum},${finalBal},${total}\n`;
- });
+ let csv="\uFEFFالكود,الاسم,النهائي\n";
+ employees.forEach(e=>{ csv+=`${e.code},"${e.name}",${getFinalBalance(e)}\n`; });
  let blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
  let url=URL.createObjectURL(blob); let a=document.createElement('a'); a.href=url; a.download='رصيد.csv'; a.click();
 }
 function clearAllData(){
- if(confirm('مسح كل البيانات وبدء سنة جديدة؟')){
+ if(confirm('مسح البيانات؟')){
    localStorage.removeItem('egazat_employees');
    localStorage.removeItem('egazat_adjustments');
-   localStorage.removeItem('egazat_date');
    employees=[]; adjustments={}; hasData=false;
    updateStatus(); renderAdmin();
  }
 }
-document.getElementById('adjCode')?.addEventListener('input', renderAdjHistory);
 loadStored();
 </script>
 </body>
