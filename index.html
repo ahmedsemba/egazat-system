@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام رصيد الإجازات - 200 موظف</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{font-family:Cairo,sans-serif;box-sizing:border-box}
+body{margin:0;background:#0f172a;color:#fff;padding:10px}
+.header{background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:20px;border-radius:14px;text-align:center}
+.card{background:#1e293b;padding:16px;border-radius:12px;margin:10px 0}
+input,select,button{padding:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;margin:4px}
+button{background:#10b981;font-weight:900;cursor:pointer}
+table{width:100%;border-collapse:collapse;background:#0f172a;border-radius:10px;overflow:hidden;margin-top:10px}
+th,td{padding:8px;border:1px solid #334155;text-align:center;font-size:11px}
+th{background:#4f46e5}
+.badge{padding:3px 8px;border-radius:20px;font-size:10px;font-weight:900}
+.moqeem{background:#10b981}.moghtareb{background:#f59e0b;color:#000}
+</style>
+</head>
+<body>
+<div class="header">
+<h2>📋 نظام رصيد الإجازات - 200 موظف</h2>
+<div style="font-size:12px">الشهر المحاسبي: 26 إلى 25 | السنة: 26 ديسمبر لـ 25 ديسمبر | المقيم 1.75/شهر - المغتربة 5/شهر</div>
+</div>
+
+<div class="card" style="border:2px dashed #10b981">
+<h3>📤 رفع شيت الموظفين من كمبيوتر الشغل</h3>
+<input type="file" id="importFile" accept=".csv,.txt">
+<button onclick="importData()" style="background:#6366f1">⬆️ استيراد البيانات</button>
+<button onclick="downloadSample()" style="background:#334155">📄 تحميل نموذج CSV</button>
+<p style="font-size:11px;color:#94a3b8">حول شيت الإكسيل لـ CSV من (حفظ باسم -> CSV) ثم ارفعه هنا</p>
+</div>
+
+<div class="card">
+<h3>➕ إضافة / تعديل موظف يدوي</h3>
+<input id="code" placeholder="الكود EMP1001">
+<input id="name" placeholder="اسم الموظف">
+<input id="hire" type="date">
+<select id="type"><option value="مقيم">مقيم</option><option value="مغتربة">مغتربة</option></select>
+<button onclick="saveEmp()">💾 حفظ</button>
+<button onclick="exportExcel()" style="background:#6366f1">📤 تصدير CSV</button>
+</div>
+
+<div class="card">
+<input id="search" placeholder="بحث بالكود أو الاسم..." oninput="render()" style="width:60%">
+<select id="yearSel" onchange="render()"></select>
+</div>
+
+<div id="list"></div>
+
+<script>
+let employees = JSON.parse(localStorage.getItem('egazat_emps')||'[]');
+let leaves = JSON.parse(localStorage.getItem('egazat_leaves')||'[]');
+
+function addMonths(date, months){ let d=new Date(date); d.setMonth(d.getMonth()+months); return d; }
+function getEntitlement(hire, type){ if(type==='مقيم') return addMonths(hire,6); return new Date(hire); }
+
+function calcAccrual(emp, accStart, accEnd, monthNum){
+  let hire=new Date(emp.hire); let ent=getEntitlement(hire,emp.type);
+  if(accEnd < ent) return 0;
+  let years=(accStart-hire)/(1000*60*60*24*365.25); let is10=years>=10;
+  let extra=(is10 && monthNum<=9)?1:0;
+  if(emp.type==='مقيم'){
+    if(accStart.getMonth()===ent.getMonth() && accStart.getFullYear()===ent.getFullYear()){
+      let daysInAcc=(accEnd-accStart)/(1000*60*60*24);
+      let worked=(accEnd-ent)/(1000*60*60*24); if(worked<0) worked=0;
+      let ratio=worked/daysInAcc; return (1.75+extra)*ratio;
+    }
+    return 1.75+extra;
+  } else {
+    if(accStart.getMonth()===hire.getMonth() && accStart.getFullYear()===hire.getFullYear()){
+      let daysInAcc=(accEnd-accStart)/(1000*60*60*24);
+      let worked=(accEnd-hire)/(1000*60*60*24); if(worked<0) worked=0;
+      let ratio=worked/daysInAcc; return (5+extra)*ratio;
+    }
+    return 5+extra;
+  }
+}
+
+function saveEmp(){
+  let code=document.getElementById('code').value.trim();
+  let name=document.getElementById('name').value.trim();
+  let hire=document.getElementById('hire').value;
+  let type=document.getElementById('type').value;
+  if(!code||!name||!hire){alert('كمل البيانات');return}
+  let idx=employees.findIndex(e=>e.code===code);
+  let emp={code,name,hire,type};
+  if(idx>=0) employees[idx]=emp; else employees.push(emp);
+  localStorage.setItem('egazat_emps',JSON.stringify(employees));
+  render(); alert('تم ✅');
+}
+
+function importData(){
+  const file=document.getElementById('importFile').files[0];
+  if(!file){alert('اختار الملف');return}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    let text=e.target.result; let lines=text.split('\n'); let count=0;
+    lines.forEach(line=>{
+      if(!line.trim()||line.includes('الكود')||line.includes('code')) return;
+      let parts=line.split(','); if(parts.length<3) return;
+      let code=parts[0].trim().replace(/"/g,'');
+      let name=parts[1].trim().replace(/"/g,'');
+      let hire=parts[2].trim().replace(/"/g,'');
+      let type=parts[3]?parts[3].trim().replace(/"/g,''):'مقيم';
+      if(hire.includes('/')){ let d=hire.split('/'); if(d.length===3) hire=`${d[2]}-${d[1].padStart(2,'0')}-${d[0].padStart(2,'0')}`; }
+      if(!code||!name||!hire) return;
+      let idx=employees.findIndex(emp=>emp.code===code);
+      let emp={code,name,hire,type}; if(idx>=0) employees[idx]=emp; else employees.push(emp); count++;
+    });
+    localStorage.setItem('egazat_emps',JSON.stringify(employees));
+    alert(`✅ تم استيراد ${count} موظف`); render();
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+function downloadSample(){
+  let csv="الكود,الاسم,تاريخ التعيين,النوع\nEMP1001,احمد محمد,2022-03-10,مقيم\nEMP1002,سارة علي,2015-06-15,مغتربة\n";
+  let blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  let url=URL.createObjectURL(blob); let a=document.createElement('a'); a.href=url; a.download='sample_egazat.csv'; a.click();
+}
+
+function addLeave(code){
+  let day=prompt('تاريخ الإجازة YYYY-MM-DD:'); if(!day) return;
+  let days=parseFloat(prompt('عدد الأيام (1 مثلا):','1')||'1');
+  leaves.push({code,date:day,days}); localStorage.setItem('egazat_leaves',JSON.stringify(leaves)); render();
+}
+function deleteEmp(code){
+  if(!confirm('حذف الموظف وكل إجازاته؟')) return;
+  employees=employees.filter(e=>e.code!==code); leaves=leaves.filter(l=>l.code!==code);
+  localStorage.setItem('egazat_emps',JSON.stringify(employees)); localStorage.setItem('egazat_leaves',JSON.stringify(leaves)); render();
+}
+function exportExcel(){
+  let csv="الكود,الاسم,تاريخ التعيين,النوع,تاريخ الاستحقاق,رصيد حالي\n";
+  employees.forEach(e=>{ let ent=getEntitlement(new Date(e.hire),e.type).toISOString().slice(0,10); csv+=`${e.code},${e.name},${e.hire},${e.type},${ent},0\n`; });
+  let blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); let url=URL.createObjectURL(blob); let a=document.createElement('a'); a.href=url; a.download='egazat_export.csv'; a.click();
+}
+function render(){
+  let year=parseInt(document.getElementById('yearSel').value||new Date().getFullYear());
+  let search=document.getElementById('search').value.toLowerCase(); let html='';
+  employees.filter(e=> !search || e.code.toLowerCase().includes(search) || e.name.toLowerCase().includes(search)).forEach(emp=>{
+    let ent=getEntitlement(new Date(emp.hire),emp.type);
+    html+=`<div class="card"><div style="display:flex;justify-content:space-between"><div><b>${emp.code}</b> - ${emp.name} <span class="badge ${emp.type==='مقيم'?'moqeem':'moghtareb'}">${emp.type}</span><br><small>تعيين: ${emp.hire} | استحقاق: ${ent.toISOString().slice(0,10)} ${emp.type==='مقيم'?'(+6 شهور)':'(نفس الشهر)'}</small></div><button style="background:#ef4444" onclick="deleteEmp('${emp.code}')">حذف</button></div>`;
+    html+=`<table><tr><th>الشهر المحاسبي 26-25</th><th>رصيد أول الشهر</th><th>المستحق<br>(1.75 أو 5)</th><th>الإجازات (تواريخ)</th><th>إجمالي المأخوذ</th><th>المتبقي</th></tr>`;
+    let balance=0;
+    for(let m=0;m<12;m++){
+      let start, end;
+      if(m===0){ start=new Date(year-1,11,26); end=new Date(year,0,25); }
+      else { start=new Date(year,m-1,26); end=new Date(year,m,25); }
+      let accrual=calcAccrual(emp,start,end,end.getMonth()+1);
+      let monthLeaves=leaves.filter(l=>l.code===emp.code && new Date(l.date)>=start && new Date(l.date)<=end);
+      let taken=monthLeaves.reduce((s,l)=>s+l.days,0);
+      let maxAllowed=emp.type==='مقيم'?4:5;
+      let warn=taken>maxAllowed?`⚠️ تعدى ${maxAllowed}`:'';
+      let balanceStart=balance; balance=balance+accrual-taken; if(balance<0) balance=0;
+      let datesList=monthLeaves.map(l=>`${l.date} (${l.days})`).join('<br>')||'-';
+      html+=`<tr><td>${start.toLocaleDateString('ar-EG')} - ${end.toLocaleDateString('ar-EG')}</td><td>${balanceStart.toFixed(2)}</td><td>${accrual.toFixed(2)}</td><td style="font-size:10px">${datesList}<br><button style="font-size:10px;padding:2px 6px" onclick="addLeave('${emp.code}')">+ إجازة</button></td><td>${taken} ${warn}</td><td style="font-weight:900;background:${balance<2?'#ef4444':'#065f46'}">${balance.toFixed(2)}</td></tr>`;
+    }
+    html+=`</table></div>`;
+  });
+  document.getElementById('list').innerHTML=html||'<p>لا يوجد موظفين - ارفع ملف CSV</p>';
+}
+let sel=document.getElementById('yearSel');
+for(let y=2020;y<=2030;y++){ let o=document.createElement('option'); o.value=y; o.text=y; if(y===new Date().getFullYear()) o.selected=true; sel.appendChild(o); }
+render();
+</script>
+</body>
+</html>
