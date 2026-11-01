@@ -8,16 +8,17 @@
 <style>
 body{margin:0;background:#0f172a;color:#fff;font-family:Arial}
 .card{background:#1e293b;margin:10px;padding:14px;border-radius:12px;border:1px solid #334155}
-input{width:100%;padding:10px;border-radius:8px;background:#0f172a;color:#fff;margin:5px 0}
-button{padding:10px;border-radius:8px;border:none;background:#10b981;color:#fff;width:100%;margin:4px 0;font-weight:bold}
+input{width:100%;padding:10px;border-radius:8px;background:#0f172a;color:#fff;margin:5px 0;box-sizing:border-box}
+button{padding:10px;border-radius:8px;border:none;background:#10b981;color:#fff;width:100%;margin:4px 0;font-weight:bold;cursor:pointer}
 .btn-blue{background:#6366f1}.btn-orange{background:#f59e0b;color:#000}.btn-red{background:#ef4444}.btn-dark{background:#065f46;border:1px solid #10b981}
 .tenure-box{background:#0f172a;padding:12px;border-radius:10px;margin-top:10px;border:1px solid #334155;text-align:right;font-size:13px;line-height:1.8}
+.row{display:flex;gap:6px}.row input{flex:1}
 </style>
 </head>
 <body>
 <div style="padding:15px;text-align:center;background:#1e293b;border-bottom:2px solid #10b981">
 <b style="font-size:17px">🏭 نظام رصيد الإجازات - شركة البروي لصناعة الغازات</b>
-<div style="font-size:11px;color:#94a3b8">v16.3 - خصوصية الاسم + الأيام المأخوذة</div>
+<div style="font-size:11px;color:#94a3b8">v16.4 - بتواريخ الإجازة من-إلى + خصوصية</div>
 </div>
 <div style="padding:10px">
 <div class="card" style="text-align:center;border:2px solid #10b981">
@@ -55,9 +56,13 @@ button{padding:10px;border-radius:8px;border:none;background:#10b981;color:#fff;
 <b>➕ 3- تحويل اضافي</b>
 <input id="adjCode" placeholder="كود"><input id="adjAmount" type="number" step="0.5" placeholder="2"><input id="adjReason" placeholder="السبب"><button onclick="editBalance()">✅ زود / نقص</button><div id="adjResult"></div>
 </div>
-<div class="card" style="background:#0f172a">
-<b>➖ 4- خصم اجازة</b>
-<input id="leaveCode" placeholder="كود"><input id="leaveDays" type="number" placeholder="ايام"><button class="btn-red" onclick="addLeave()">خصم</button><div id="leaveResult"></div>
+<div class="card" style="background:#0f172a;border:2px solid #ef4444">
+<b>➖ 4- خصم اجازة بتواريخ من-إلى</b>
+<input id="leaveCode" placeholder="كود الموظف">
+<div class="row"><input id="leaveFrom" type="date"><input id="leaveTo" type="date"></div>
+<input id="leaveDays" type="number" placeholder="عدد الأيام - هيتحسب لوحده">
+<button class="btn-red" onclick="addLeave()">خصم الاجازة من-إلى</button>
+<div id="leaveResult"></div>
 </div>
 <div class="card"><input id="adminSearch" placeholder="بحث" oninput="renderAdmin()"><div id="adminList"></div></div>
 </div>
@@ -79,8 +84,26 @@ function uploadToGitHub(){if(!hasData){alert('اختر الشيت');return;}var 
 function saveToGitHub(){var gh=getGH();if(!gh.token)return;fetch('https://api.github.com/repos/'+gh.user+'/'+gh.repo+'/contents/data.json',{headers:{'Authorization':'token '+gh.token}}).then(function(getRes){if(getRes.ok){return getRes.json();}return null;}).then(function(j){var sha=null;if(j){sha=j.sha;}var content=btoa(unescape(encodeURIComponent(JSON.stringify(employees))));return fetch('https://api.github.com/repos/'+gh.user+'/'+gh.repo+'/contents/data.json',{method:'PUT',headers:{'Authorization':'token '+gh.token,'Content-Type':'application/json'},body:JSON.stringify({message:'تعديل',content:content,sha:sha})});});}
 function exportCurrentExcel(){var dataForExcel=[];for(var i=0;i<employees.length;i++){var emp=employees[i];dataForExcel.push({'الكود':emp.code,'الاسم':emp.name,'الرصيد':emp.balance});}var ws=XLSX.utils.json_to_sheet(dataForExcel);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'الوضع');XLSX.writeFile(wb,'رصيد_حالي.xlsx');}
 function editBalance(){var code=document.getElementById('adjCode').value.trim();var amount=parseFloat(document.getElementById('adjAmount').value);var reason=document.getElementById('adjReason').value||'تحويل اضافي';if(!code||isNaN(amount)){alert('اكتب الكود والمبلغ');return;}var emp=null;for(var i=0;i<employees.length;i++){if(String(employees[i].code)===String(code)){emp=employees[i];break;}}if(!emp){alert('غير موجود');return;}emp.balance+=amount;if(emp.balance<0){emp.balance=0;}if(!emp.history){emp.history=[];}emp.history.push({id:Date.now(),date:new Date().toISOString().slice(0,10),amount:amount,reason:reason});saveToGitHub();document.getElementById('adjResult').innerHTML='تم';renderAdmin();}
-function addLeave(){var code=document.getElementById('leaveCode').value.trim();var days=parseFloat(document.getElementById('leaveDays').value);if(!code||isNaN(days)){alert('اكتب الكود والايام');return;}var emp=null;for(var i=0;i<employees.length;i++){if(String(employees[i].code)===String(code)){emp=employees[i];break;}}if(!emp){alert('غير موجود');return;}emp.balance-=days;if(emp.balance<0){emp.balance=0;}if(!emp.history){emp.history=[];}emp.history.push({id:Date.now(),date:new Date().toISOString().slice(0,10),amount:-days,reason:'اجازة '+days+' يوم'});saveToGitHub();document.getElementById('leaveResult').innerHTML='خصم '+days;renderAdmin();}
-
+function calcDays(){var f=document.getElementById('leaveFrom').value;var t=document.getElementById('leaveTo').value;if(f&&t){var d1=new Date(f);var d2=new Date(t);var diff=Math.round((d2-d1)/86400000)+1;if(diff>0){document.getElementById('leaveDays').value=diff;}}}
+function addLeave(){
+  var code=document.getElementById('leaveCode').value.trim();
+  var from=document.getElementById('leaveFrom').value;
+  var to=document.getElementById('leaveTo').value;
+  var days=parseFloat(document.getElementById('leaveDays').value);
+  if(!code||isNaN(days)){alert('اكتب الكود وعدد الأيام أو اختر من-إلى');return;}
+  if(!from){from=new Date().toISOString().slice(0,10);}
+  if(!to){to=from;}
+  var emp=null;
+  for(var i=0;i<employees.length;i++){if(String(employees[i].code)===String(code)){emp=employees[i];break;}}
+  if(!emp){alert('غير موجود');return;}
+  emp.balance-=days;if(emp.balance<0){emp.balance=0;}
+  if(!emp.history){emp.history=[];}
+  var reasonText='اجازة من '+from+' إلى '+to+' - '+days+' يوم';
+  emp.history.push({id:Date.now(),date:from,from:from,to:to,amount:-days,reason:reasonText});
+  saveToGitHub();
+  document.getElementById('leaveResult').innerHTML='<div style="background:#065f46;padding:8px;border-radius:8px">✅ خصم '+days+' يوم من '+from+' إلى '+to+' - الجديد '+emp.balance.toFixed(1)+'</div>';
+  renderAdmin();
+}
 function searchByCode(){
   if(employees.length==0){document.getElementById('empResult').innerHTML='لسه بنحمل...';loadPublicData();return;}
   var c=document.getElementById('empCodeOnly').value.trim();
@@ -95,25 +118,27 @@ function searchByCode(){
     for(var k=0;k<emp.history.length;k++){
       var h=emp.history[k];
       if(!h || !h.date) continue;
-      if(h.date.indexOf(String(currentYear))===0 && h.amount<0){
+      var hYear=h.date.slice(0,4);
+      if(hYear==String(currentYear) && h.amount<0){
         takenThisYear+=Math.abs(h.amount);
-        takenDetails.push(h.date+' : '+Math.abs(h.amount)+' يوم ('+(h.reason||'اجازة')+')');
+        var dateDisplay='';
+        if(h.from && h.to){dateDisplay=h.from+' إلى '+h.to;} else {dateDisplay=h.date;}
+        takenDetails.push(dateDisplay+' : '+Math.abs(h.amount)+' يوم');
       }
     }
   }
   var takenText='';
   if(takenThisYear>0){
-    takenText='<div style="background:#7c2d12;padding:8px;border-radius:8px;margin-top:8px;border:1px solid #f59e0b">📊 <b>أخدت السنة دي '+currentYear+' : '+takenThisYear+' يوم</b><div style="font-size:11px;margin-top:4px;text-align:right">'+takenDetails.slice(0,5).join('<br>')+'</div></div>';
+    takenText='<div style="background:#7c2d12;padding:8px;border-radius:8px;margin-top:8px;border:1px solid #f59e0b;text-align:right">📊 <b>أخدت السنة دي '+currentYear+' : '+takenThisYear+' يوم</b><div style="font-size:11px;margin-top:6px;line-height:1.8">'+takenDetails.join('<br>')+'</div></div>';
   } else {
     takenText='<div style="background:#1e3a5f;padding:8px;border-radius:8px;margin-top:8px">📊 <b>مأخدتش اجازات السنة دي '+currentYear+' - 0 يوم</b></div>';
   }
   document.getElementById('empResult').innerHTML='<div style="background:#065f46;padding:14px;border-radius:12px;text-align:center"><b>كود: '+emp.code+' - الاسم مخفي للخصوصية - '+emp.type+'</b><div style="font-size:52px;font-weight:900">'+emp.balance.toFixed(1)+'</div><div>يوم رصيد متبقي</div><div class="tenure-box"><div>🔒 الاسم مخفي للخصوصية</div><div>🏢 '+emp.dept+'</div><div>'+tenure.text+'</div><div style="color:#10b981;font-weight:bold;margin-top:6px">'+tenure.remaining+'</div>'+takenText+'</div></div>';
 }
-
 function renderAdmin(){if(!hasData){document.getElementById('adminList').innerHTML='فاضي';return;}var q=(document.getElementById('adminSearch').value||'').toLowerCase();var filtered=[];for(var i=0;i<employees.length;i++){var e=employees[i];if(!q||String(e.code).indexOf(q)>=0||e.name.toLowerCase().indexOf(q)>=0){filtered.push(e);}}var html='<table style="width:100%;background:#0f172a"><tr><th>كود</th><th>اسم</th><th>رصيد</th></tr>';for(var j=0;j<filtered.length&&j<300;j++){var emp=filtered[j];html+='<tr><td>'+emp.code+'</td><td>'+emp.name.slice(0,18)+'</td><td>'+emp.balance.toFixed(1)+'</td></tr>';}html+='</table>';document.getElementById('adminList').innerHTML=html;}
-function applyMonthlyIncrease(){if(!confirm('زيادة 26؟'))return;var month=new Date().getMonth()+1;for(var i=0;i<employees.length;i++){var emp=employees[i];var tenure=getTenureYears(emp.hire);var isMog=String(emp.type).indexOf('مغترب')>=0;var add=0;if(isMog){if(tenure>=10&&month>=1&&month<=9){add=6;}else{add=5;}}else{if(tenure>=10&&month>=1&&month<=9){add=1;}}if(add>0){emp.balance+=add;}}saveToGitHub();alert('تمت الزيادة');renderAdmin();}
+function applyMonthlyIncrease(){if(!confirm('زيادة يوم 26؟'))return;var month=new Date().getMonth()+1;for(var i=0;i<employees.length;i++){var emp=employees[i];var tenure=getTenureYears(emp.hire);var isMog=String(emp.type).indexOf('مغترب')>=0;var add=0;if(isMog){if(tenure>=10&&month>=1&&month<=9){add=6;}else{add=5;}}else{if(tenure>=10&&month>=1&&month<=9){add=1;}}if(add>0){emp.balance+=add;}}saveToGitHub();alert('تمت الزيادة');renderAdmin();}
 function applyAnnualReset(){if(!confirm('تصفية 26 ديسمبر؟'))return;for(var j=0;j<employees.length;j++){var emp2=employees[j];var isMog2=String(emp2.type).toLowerCase().indexOf('مغترب')>=0;var tenure2=getTenureYears(emp2.hire);if(!isMog2){emp2.balance=tenure2>=10?30:21;}else{emp2.balance+=tenure2>=10?6:5;}}saveToGitHub();alert('تمت التصفية');renderAdmin();}
-window.addEventListener('DOMContentLoaded',function(){loadPublicData();});
+window.addEventListener('DOMContentLoaded',function(){var f=document.getElementById('leaveFrom');var t=document.getElementById('leaveTo');if(f){f.addEventListener('change',calcDays);}if(t){t.addEventListener('change',calcDays);}loadPublicData();});
 </script>
 </body>
 </html>
