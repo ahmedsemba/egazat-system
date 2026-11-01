@@ -18,7 +18,7 @@ button{padding:10px;border-radius:8px;border:none;background:#10b981;color:#fff;
 <body>
 <div style="padding:15px;text-align:center;background:#1e293b;border-bottom:2px solid #10b981">
 <b style="font-size:17px">🏭 نظام رصيد الإجازات - شركة البروي لصناعة الغازات</b>
-<div style="font-size:11px;color:#94a3b8">v16.4 - بتواريخ الإجازة من-إلى + خصوصية</div>
+<div style="font-size:11px;color:#94a3b8">v16.5 - تصدير بالإدارة + شيت تصفية 26 ديسمبر للمقيمين</div>
 </div>
 <div style="padding:10px">
 <div class="card" style="text-align:center;border:2px solid #10b981">
@@ -44,13 +44,13 @@ button{padding:10px;border-radius:8px;border:none;background:#10b981;color:#fff;
 <input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none" onchange="handleExcel(event)">
 <button class="btn-blue" onclick="document.getElementById('excelFile').click()">اختر الشيت</button>
 <button onclick="uploadToGitHub()">☁️ رفع على GitHub</button>
-<button class="btn-dark" onclick="exportCurrentExcel()">📥 تصدير الرصيد الحالي Excel</button>
+<button class="btn-dark" onclick="exportCurrentExcel()">📥 تصدير الرصيد الحالي Excel (بالإدارة)</button>
 <div id="uploadStatus"></div>
 </div>
 <div class="card" style="background:#0f172a;border:2px solid #f59e0b">
 <b>⚙️ 2- زيادات وتصفية يوم 26</b>
 <button class="btn-orange" onclick="applyMonthlyIncrease()">⚡ زيادة يوم 26 - 5 للمغترب / 6 للي كمل 10 حتى شهر 9</button>
-<button style="background:linear-gradient(135deg,#ef4444,#f59e0b)" onclick="applyAnnualReset()">📅 تصفية 26 ديسمبر</button>
+<button style="background:linear-gradient(135deg,#ef4444,#f59e0b)" onclick="applyAnnualReset()">📅 تصفية 26 ديسمبر - يصدر شيت المقيمين + يصفّر 21/30</button>
 </div>
 <div class="card" style="background:#0f172a;border:2px solid #10b981">
 <b>➕ 3- تحويل اضافي</b>
@@ -82,9 +82,26 @@ function handleExcel(e){var f=e.target.files[0];if(!f)return;var r=new FileReade
 function loadPublicData(){var gh=getGH();var url='https://raw.githubusercontent.com/'+gh.user+'/'+gh.repo+'/main/data.json?'+Date.now();fetch(url,{cache:'no-store'}).then(function(res){return res.text();}).then(function(txt){if(!txt||txt.trim()==''||txt.trim()=='[]')return;var data=JSON.parse(txt);if(data.length>0){employees=data;hasData=true;document.getElementById('publicLoadStatus').innerHTML='✅ '+data.length+' موظف';localStorage.setItem('egazat_cache',JSON.stringify({time:Date.now(),data:data}));renderAdmin();}});}
 function uploadToGitHub(){if(!hasData){alert('اختر الشيت');return;}var gh=getGH();if(!gh.token){alert('حط التوكن');return;}fetch('https://api.github.com/repos/'+gh.user+'/'+gh.repo+'/contents/data.json',{headers:{'Authorization':'token '+gh.token}}).then(function(getRes){if(getRes.ok){return getRes.json().then(function(j){return j.sha;});}return null;}).then(function(sha){var content=btoa(unescape(encodeURIComponent(JSON.stringify(employees))));return fetch('https://api.github.com/repos/'+gh.user+'/'+gh.repo+'/contents/data.json',{method:'PUT',headers:{'Authorization':'token '+gh.token,'Content-Type':'application/json'},body:JSON.stringify({message:'رفع',content:content,sha:sha})});});}
 function saveToGitHub(){var gh=getGH();if(!gh.token)return;fetch('https://api.github.com/repos/'+gh.user+'/'+gh.repo+'/contents/data.json',{headers:{'Authorization':'token '+gh.token}}).then(function(getRes){if(getRes.ok){return getRes.json();}return null;}).then(function(j){var sha=null;if(j){sha=j.sha;}var content=btoa(unescape(encodeURIComponent(JSON.stringify(employees))));return fetch('https://api.github.com/repos/'+gh.user+'/'+gh.repo+'/contents/data.json',{method:'PUT',headers:{'Authorization':'token '+gh.token,'Content-Type':'application/json'},body:JSON.stringify({message:'تعديل',content:content,sha:sha})});});}
-function exportCurrentExcel(){var dataForExcel=[];for(var i=0;i<employees.length;i++){var emp=employees[i];dataForExcel.push({'الكود':emp.code,'الاسم':emp.name,'الرصيد':emp.balance});}var ws=XLSX.utils.json_to_sheet(dataForExcel);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'الوضع');XLSX.writeFile(wb,'رصيد_حالي.xlsx');}
-function editBalance(){var code=document.getElementById('adjCode').value.trim();var amount=parseFloat(document.getElementById('adjAmount').value);var reason=document.getElementById('adjReason').value||'تحويل اضافي';if(!code||isNaN(amount)){alert('اكتب الكود والمبلغ');return;}var emp=null;for(var i=0;i<employees.length;i++){if(String(employees[i].code)===String(code)){emp=employees[i];break;}}if(!emp){alert('غير موجود');return;}emp.balance+=amount;if(emp.balance<0){emp.balance=0;}if(!emp.history){emp.history=[];}emp.history.push({id:Date.now(),date:new Date().toISOString().slice(0,10),amount:amount,reason:reason});saveToGitHub();document.getElementById('adjResult').innerHTML='تم';renderAdmin();}
+
+function exportCurrentExcel(){
+  var dataForExcel=[];
+  for(var i=0;i<employees.length;i++){
+    var emp=employees[i];
+    dataForExcel.push({
+      'الكود':emp.code,
+      'الاسم':emp.name,
+      'الإدارة':emp.dept,
+      'النوع':emp.type,
+      'الرصيد الحالي':emp.balance
+    });
+  }
+  var ws=XLSX.utils.json_to_sheet(dataForExcel);
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'الرصيد الحالي');
+  XLSX.writeFile(wb,'الرصيد_الحالي_بالادارة.xlsx');
+}
 function calcDays(){var f=document.getElementById('leaveFrom').value;var t=document.getElementById('leaveTo').value;if(f&&t){var d1=new Date(f);var d2=new Date(t);var diff=Math.round((d2-d1)/86400000)+1;if(diff>0){document.getElementById('leaveDays').value=diff;}}}
+function editBalance(){var code=document.getElementById('adjCode').value.trim();var amount=parseFloat(document.getElementById('adjAmount').value);var reason=document.getElementById('adjReason').value||'تحويل اضافي';if(!code||isNaN(amount)){alert('اكتب الكود والمبلغ');return;}var emp=null;for(var i=0;i<employees.length;i++){if(String(employees[i].code)===String(code)){emp=employees[i];break;}}if(!emp){alert('غير موجود');return;}emp.balance+=amount;if(emp.balance<0){emp.balance=0;}if(!emp.history){emp.history=[];}emp.history.push({id:Date.now(),date:new Date().toISOString().slice(0,10),amount:amount,reason:reason});saveToGitHub();document.getElementById('adjResult').innerHTML='تم';renderAdmin();}
 function addLeave(){
   var code=document.getElementById('leaveCode').value.trim();
   var from=document.getElementById('leaveFrom').value;
@@ -137,7 +154,55 @@ function searchByCode(){
 }
 function renderAdmin(){if(!hasData){document.getElementById('adminList').innerHTML='فاضي';return;}var q=(document.getElementById('adminSearch').value||'').toLowerCase();var filtered=[];for(var i=0;i<employees.length;i++){var e=employees[i];if(!q||String(e.code).indexOf(q)>=0||e.name.toLowerCase().indexOf(q)>=0){filtered.push(e);}}var html='<table style="width:100%;background:#0f172a"><tr><th>كود</th><th>اسم</th><th>رصيد</th></tr>';for(var j=0;j<filtered.length&&j<300;j++){var emp=filtered[j];html+='<tr><td>'+emp.code+'</td><td>'+emp.name.slice(0,18)+'</td><td>'+emp.balance.toFixed(1)+'</td></tr>';}html+='</table>';document.getElementById('adminList').innerHTML=html;}
 function applyMonthlyIncrease(){if(!confirm('زيادة يوم 26؟'))return;var month=new Date().getMonth()+1;for(var i=0;i<employees.length;i++){var emp=employees[i];var tenure=getTenureYears(emp.hire);var isMog=String(emp.type).indexOf('مغترب')>=0;var add=0;if(isMog){if(tenure>=10&&month>=1&&month<=9){add=6;}else{add=5;}}else{if(tenure>=10&&month>=1&&month<=9){add=1;}}if(add>0){emp.balance+=add;}}saveToGitHub();alert('تمت الزيادة');renderAdmin();}
-function applyAnnualReset(){if(!confirm('تصفية 26 ديسمبر؟'))return;for(var j=0;j<employees.length;j++){var emp2=employees[j];var isMog2=String(emp2.type).toLowerCase().indexOf('مغترب')>=0;var tenure2=getTenureYears(emp2.hire);if(!isMog2){emp2.balance=tenure2>=10?30:21;}else{emp2.balance+=tenure2>=10?6:5;}}saveToGitHub();alert('تمت التصفية');renderAdmin();}
+
+function applyAnnualReset(){
+  if(!confirm('تصفية 26 ديسمبر للمقيمين فقط؟ هيصدر شيت أولاً بالرصيد حتى 25 ديسمبر وبعدها يصفر 21/30 مظبوط على حسب التعيين'))return;
+  // 1- تصدير شيت قبل التصفية - للمقيمين فقط
+  var reportData=[];
+  for(var j=0;j<employees.length;j++){
+    var emp=employees[j];
+    var isMog=String(emp.type).toLowerCase().indexOf('مغترب')>=0;
+    if(isMog) continue; // مقيمين فقط
+    var tenure=getTenureYears(emp.hire);
+    var newBal=tenure>=10?30:21;
+    var hireDate=emp.hire||'غير مسجل';
+    var years=Math.floor(tenure);
+    reportData.push({
+      'الكود':emp.code,
+      'الاسم':emp.name,
+      'الإدارة':emp.dept,
+      'تاريخ التعيين':hireDate,
+      'سنوات الخدمة':years,
+      'الرصيد المتبقي حتى 25 ديسمبر':emp.balance,
+      'الرصيد الجديد بعد التصفية':newBal
+    });
+  }
+  if(reportData.length>0){
+    var ws=XLSX.utils.json_to_sheet(reportData);
+    var wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'حتى 25 ديسمبر - مقيمين');
+    XLSX.writeFile(wb,'رصيد_حتى_25_ديسمبر_مقيمين.xlsx');
+  }
+  // 2- بعد التصدير - اعمل التصفية الفعلية مظبوط
+  for(var k=0;k<employees.length;k++){
+    var emp2=employees[k];
+    var isMog2=String(emp2.type).toLowerCase().indexOf('مغترب')>=0;
+    var tenure2=getTenureYears(emp2.hire);
+    if(!isMog2){
+      emp2.balance=tenure2>=10?30:21;
+    } else {
+      // المغترب بيزود حسب قانونك
+      var addMog=tenure2>=10?6:5;
+      emp2.balance+=addMog;
+    }
+    if(!emp2.history){emp2.history=[];}
+    emp2.history.push({id:Date.now()+k,date:new Date().toISOString().slice(0,10),amount:0,reason:'تصفية 26 ديسمبر - رصيد جديد '+(isMog2?emp2.balance:(tenure2>=10?30:21))});
+  }
+  saveToGitHub();
+  alert('تم تصدير شيت المقيمين حتى 25 ديسمبر + تمت التصفية 21/30 مظبوط على حسب تاريخ التعيين ✅');
+  renderAdmin();
+}
+
 window.addEventListener('DOMContentLoaded',function(){var f=document.getElementById('leaveFrom');var t=document.getElementById('leaveTo');if(f){f.addEventListener('change',calcDays);}if(t){t.addEventListener('change',calcDays);}loadPublicData();});
 </script>
 </body>
