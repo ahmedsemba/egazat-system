@@ -59,7 +59,7 @@ button{padding:10px;border-radius:8px;border:none;background:#10b981;color:#fff;
 <div class="card" style="background:#0f172a;border:2px solid #ef4444">
 <b>➖ 4- خصم اجازة بتواريخ من-إلى</b>
 <input id="leaveCode" placeholder="كود الموظف">
-<div class="row"><input id="leaveFrom" type="text" inputmode="numeric" placeholder="من: يوم/شهر/سنة"><input id="leaveTo" type="text" inputmode="numeric" placeholder="إلى: يوم/شهر/سنة"></div>
+<div class="row"><label style="flex:1">من: <input id="leaveFrom" type="date" style="width:100%"></label><label style="flex:1">إلى: <input id="leaveTo" type="date" style="width:100%"></label></div>
 <input id="leaveDays" type="number" min="0.5" step="0.5" placeholder="عدد الأيام (مثلاً 0.5 أو 1.5) - هيتحسب من التواريخ"><div style="font-size:12px;color:#fbbf24;margin:4px 0 8px">يمكنك تسجيل نصف يوم أو يوم ونصف أو أي عدد بزيادة نصف يوم.</div>
 <button class="btn-red" onclick="addLeave()">خصم الاجازة من-إلى</button>
 <div id="leaveResult"></div>
@@ -100,22 +100,23 @@ function exportCurrentExcel(){
   XLSX.utils.book_append_sheet(wb,ws,'الرصيد الحالي');
   XLSX.writeFile(wb,'الرصيد_الحالي_بالادارة.xlsx');
 }
-function dateDMYtoISO(value){if(!value)return '';var m=value.trim().match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);if(!m)return null;var day=Number(m[1]),month=Number(m[2]),year=Number(m[3]);var d=new Date(Date.UTC(year,month-1,day));if(d.getUTCFullYear()!==year||d.getUTCMonth()!==month-1||d.getUTCDate()!==day)return null;return year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');}
-function calcDays(){var f=dateDMYtoISO(document.getElementById('leaveFrom').value);var t=dateDMYtoISO(document.getElementById('leaveTo').value);if(f&&t){var d1=new Date(f+'T00:00:00Z');var d2=new Date(t+'T00:00:00Z');var diff=Math.round((d2-d1)/86400000)+1;if(diff>0){document.getElementById('leaveDays').value=diff;}}}
+function dateDMYtoISO(value){if(!value)return '';value=value.trim();var iso=value.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(iso){var iy=Number(iso[1]),im=Number(iso[2]),id=Number(iso[3]);var ix=new Date(Date.UTC(iy,im-1,id));return ix.getUTCFullYear()===iy&&ix.getUTCMonth()===im-1&&ix.getUTCDate()===id?value:null;}var m=value.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);if(!m)return null;var day=Number(m[1]),month=Number(m[2]),year=Number(m[3]);var d=new Date(Date.UTC(year,month-1,day));if(d.getUTCFullYear()!==year||d.getUTCMonth()!==month-1||d.getUTCDate()!==day)return null;return year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');}
+function calcDays(){var f=dateDMYtoISO(document.getElementById('leaveFrom').value);var t=dateDMYtoISO(document.getElementById('leaveTo').value);if(f&&t&&t>=f){var d1=new Date(f+'T00:00:00Z');var d2=new Date(t+'T00:00:00Z');var diff=Math.round((d2-d1)/86400000)+1;if(diff>0){document.getElementById('leaveDays').value=diff;}}}
+function hasLeaveOverlap(emp,from,to){if(!emp.history)return false;for(var i=0;i<emp.history.length;i++){var h=emp.history[i];if(!h||!(Number(h.amount)<0))continue;var isLeave=!!(h.from||h.to||(h.reason&&String(h.reason).indexOf('اجازة')>=0));if(!isLeave)continue;var oldFrom=dateDMYtoISO(h.from||h.date||'');var oldTo=dateDMYtoISO(h.to||h.date||h.from||'');if(oldFrom&&oldTo&&oldFrom<=to&&oldTo>=from)return true;}return false;}
 function editBalance(){var code=document.getElementById('adjCode').value.trim();var amount=parseFloat(document.getElementById('adjAmount').value);var reason=document.getElementById('adjReason').value||'تحويل اضافي';if(!code||isNaN(amount)){alert('اكتب الكود والمبلغ');return;}var emp=null;for(var i=0;i<employees.length;i++){if(String(employees[i].code)===String(code)){emp=employees[i];break;}}if(!emp){alert('غير موجود');return;}emp.balance+=amount;if(emp.balance<0){emp.balance=0;}if(!emp.history){emp.history=[];}emp.history.push({id:Date.now(),date:new Date().toISOString().slice(0,10),amount:amount,reason:reason});saveToGitHub();document.getElementById('adjResult').innerHTML='تم';renderAdmin();}
 function addLeave(){
   var code=document.getElementById('leaveCode').value.trim();
   var from=dateDMYtoISO(document.getElementById('leaveFrom').value);
   var to=dateDMYtoISO(document.getElementById('leaveTo').value);
-  if(from===null||to===null){alert('اكتب التاريخ بصيغة يوم/شهر/سنة مثل 08/11/2026');return;}
+  if(!from||!to||from===null||to===null){alert('اختار تاريخ البداية والنهاية من التقويم');return;}
+  if(to<from){alert('تاريخ النهاية لازم يكون نفس تاريخ البداية أو بعده');return;}
   var days=parseFloat(document.getElementById('leaveDays').value);
   if(!code||isNaN(days)||days<=0){alert('اكتب الكود وعدد أيام صحيح');return;}
   if(Math.abs(days*2-Math.round(days*2))>0.0000001){alert('عدد الأيام لازم يكون بنصف يوم: 0.5 أو 1 أو 1.5 وهكذا');return;}
-  if(!from){from=new Date().toISOString().slice(0,10);}
-  if(!to){to=from;}
   var emp=null;
   for(var i=0;i<employees.length;i++){if(String(employees[i].code)===String(code)){emp=employees[i];break;}}
   if(!emp){alert('غير موجود');return;}
+  if(hasLeaveOverlap(emp,from,to)){alert('⚠️ يوجد خصم إجازة مسجل بالفعل لهذا الموظف في يوم أو أكثر من الفترة المحددة. لم يتم خصم أي أيام.');return;}
   emp.balance-=days;if(emp.balance<0){emp.balance=0;}
   if(!emp.history){emp.history=[];}
   var reasonText='اجازة من '+from+' إلى '+to+' - '+days+' يوم';
