@@ -60,7 +60,7 @@ button{padding:10px;border-radius:8px;border:none;background:#10b981;color:#fff;
 <b>➖ 4- خصم اجازة بتواريخ من-إلى</b>
 <input id="leaveCode" placeholder="كود الموظف">
 <div class="row"><input id="leaveFrom" type="date"><input id="leaveTo" type="date"></div>
-<input id="leaveDays" type="number" placeholder="عدد الأيام - هيتحسب لوحده">
+<input id="leaveDays" type="number" min="0.5" step="0.5" placeholder="عدد الأيام (مثلاً 0.5 أو 1.5) - هيتحسب من التواريخ"><div style="font-size:12px;color:#fbbf24;margin:4px 0 8px">يمكنك تسجيل نصف يوم أو يوم ونصف أو أي عدد بزيادة نصف يوم.</div>
 <button class="btn-red" onclick="addLeave()">خصم الاجازة من-إلى</button>
 <div id="leaveResult"></div>
 </div>
@@ -107,7 +107,8 @@ function addLeave(){
   var from=document.getElementById('leaveFrom').value;
   var to=document.getElementById('leaveTo').value;
   var days=parseFloat(document.getElementById('leaveDays').value);
-  if(!code||isNaN(days)){alert('اكتب الكود وعدد الأيام أو اختر من-إلى');return;}
+  if(!code||isNaN(days)||days<=0){alert('اكتب الكود وعدد أيام صحيح');return;}
+  if(Math.abs(days*2-Math.round(days*2))>0.0000001){alert('عدد الأيام لازم يكون بنصف يوم: 0.5 أو 1 أو 1.5 وهكذا');return;}
   if(!from){from=new Date().toISOString().slice(0,10);}
   if(!to){to=from;}
   var emp=null;
