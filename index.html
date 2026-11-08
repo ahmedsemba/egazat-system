@@ -151,6 +151,8 @@ function searchByCode(){
   } else {
     takenText='<div style="background:#1e3a5f;padding:8px;border-radius:8px;margin-top:8px">📊 <b>مأخدتش اجازات السنة دي '+currentYear+' - 0 يوم</b></div>';
   }
+  document.getElementById('adjCode').value=String(emp.code);
+  document.getElementById('leaveCode').value=String(emp.code);
   document.getElementById('empResult').innerHTML='<div style="background:#065f46;padding:14px;border-radius:12px;text-align:center"><b>كود: '+emp.code+' - الاسم مخفي للخصوصية - '+emp.type+'</b><div style="font-size:52px;font-weight:900">'+emp.balance.toFixed(1)+'</div><div>يوم رصيد متبقي</div><div class="tenure-box"><div>🔒 الاسم مخفي للخصوصية</div><div>🏢 '+emp.dept+'</div><div>'+tenure.text+'</div><div style="color:#10b981;font-weight:bold;margin-top:6px">'+tenure.remaining+'</div>'+takenText+'</div></div>';
 }
 function renderAdmin(){if(!hasData){document.getElementById('adminList').innerHTML='فاضي';return;}var q=(document.getElementById('adminSearch').value||'').toLowerCase();var filtered=[];for(var i=0;i<employees.length;i++){var e=employees[i];if(!q||String(e.code).indexOf(q)>=0||e.name.toLowerCase().indexOf(q)>=0){filtered.push(e);}}var html='<table style="width:100%;background:#0f172a"><tr><th>كود</th><th>اسم</th><th>رصيد</th></tr>';for(var j=0;j<filtered.length&&j<300;j++){var emp=filtered[j];html+='<tr><td>'+emp.code+'</td><td>'+emp.name.slice(0,18)+'</td><td>'+emp.balance.toFixed(1)+'</td></tr>';}html+='</table>';document.getElementById('adminList').innerHTML=html;}
