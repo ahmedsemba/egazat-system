@@ -82,6 +82,7 @@ function handleExcel(e){var f=e.target.files[0];if(!f)return;var r=new FileReade
 function loadPublicData(){var gh=getGH();var url='https://raw.githubusercontent.com/'+gh.user+'/'+gh.repo+'/main/data.json?'+Date.now();fetch(url,{cache:'no-store'}).then(function(res){return res.text();}).then(function(txt){if(!txt||txt.trim()==''||txt.trim()=='[]')return;var data=JSON.parse(txt);if(data.length>0){employees=data;hasData=true;document.getElementById('publicLoadStatus').innerHTML='✅ '+data.length+' موظف';localStorage.setItem('egazat_cache',JSON.stringify({time:Date.now(),data:data}));renderAdmin();}});}
 function uploadToGitHub(){if(!hasData){alert('اختر الشيت');return;}var gh=getGH();if(!gh.token){alert('حط التوكن');return;}fetch('https://api.github.com/repos/'+gh.user+'/'+gh.repo+'/contents/data.json',{headers:{'Authorization':'token '+gh.token}}).then(function(getRes){if(getRes.ok){return getRes.json().then(function(j){return j.sha;});}return null;}).then(function(sha){var content=btoa(unescape(encodeURIComponent(JSON.stringify(employees))));return fetch('https://api.github.com/repos/'+gh.user+'/'+gh.repo+'/contents/data.json',{method:'PUT',headers:{'Authorization':'token '+gh.token,'Content-Type':'application/json'},body:JSON.stringify({message:'رفع',content:content,sha:sha})});});}
 function saveToGitHub(){var gh=getGH();if(!gh.token)return;fetch('https://api.github.com/repos/'+gh.user+'/'+gh.repo+'/contents/data.json',{headers:{'Authorization':'token '+gh.token}}).then(function(getRes){if(getRes.ok){return getRes.json();}return null;}).then(function(j){var sha=null;if(j){sha=j.sha;}var content=btoa(unescape(encodeURIComponent(JSON.stringify(employees))));return fetch('https://api.github.com/repos/'+gh.user+'/'+gh.repo+'/contents/data.json',{method:'PUT',headers:{'Authorization':'token '+gh.token,'Content-Type':'application/json'},body:JSON.stringify({message:'تعديل',content:content,sha:sha})});});}
+function recordMovement(emp,amount,type,reason,date){if(!emp.history)emp.history=[];emp.history.push({id:Date.now()+emp.history.length,date:date||new Date().toISOString().slice(0,10),amount:Number(amount)||0,type:type||((amount)<0?'خصم':'إضافة'),reason:reason||'',balanceAfter:Number(emp.balance)||0});}
 
 function exportCurrentExcel(){
   var dataForExcel=[];
@@ -103,7 +104,7 @@ function exportCurrentExcel(){
 function dateDMYtoISO(value){if(!value)return '';value=value.trim();var iso=value.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(iso){var iy=Number(iso[1]),im=Number(iso[2]),id=Number(iso[3]);var ix=new Date(Date.UTC(iy,im-1,id));return ix.getUTCFullYear()===iy&&ix.getUTCMonth()===im-1&&ix.getUTCDate()===id?value:null;}var m=value.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);if(!m)return null;var day=Number(m[1]),month=Number(m[2]),year=Number(m[3]);var d=new Date(Date.UTC(year,month-1,day));if(d.getUTCFullYear()!==year||d.getUTCMonth()!==month-1||d.getUTCDate()!==day)return null;return year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');}
 function calcDays(){var f=dateDMYtoISO(document.getElementById('leaveFrom').value);var t=dateDMYtoISO(document.getElementById('leaveTo').value);if(f&&t&&t>=f){var d1=new Date(f+'T00:00:00Z');var d2=new Date(t+'T00:00:00Z');var diff=Math.round((d2-d1)/86400000)+1;if(diff>0){document.getElementById('leaveDays').value=diff;}}}
 function hasLeaveOverlap(emp,from,to){if(!emp.history)return false;for(var i=0;i<emp.history.length;i++){var h=emp.history[i];if(!h||!(Number(h.amount)<0))continue;var isLeave=!!(h.from||h.to||(h.reason&&String(h.reason).indexOf('اجازة')>=0));if(!isLeave)continue;var oldFrom=dateDMYtoISO(h.from||h.date||'');var oldTo=dateDMYtoISO(h.to||h.date||h.from||'');if(oldFrom&&oldTo&&oldFrom<=to&&oldTo>=from)return true;}return false;}
-function editBalance(){var code=document.getElementById('adjCode').value.trim();var amount=parseFloat(document.getElementById('adjAmount').value);var reason=document.getElementById('adjReason').value||'تحويل اضافي';if(!code||isNaN(amount)){alert('اكتب الكود والمبلغ');return;}var emp=null;for(var i=0;i<employees.length;i++){if(String(employees[i].code)===String(code)){emp=employees[i];break;}}if(!emp){alert('غير موجود');return;}emp.balance+=amount;if(emp.balance<0){emp.balance=0;}if(!emp.history){emp.history=[];}emp.history.push({id:Date.now(),date:new Date().toISOString().slice(0,10),amount:amount,reason:reason});saveToGitHub();document.getElementById('adjResult').innerHTML='تم';renderAdmin();}
+function editBalance(){var code=document.getElementById('adjCode').value.trim();var amount=parseFloat(document.getElementById('adjAmount').value);var reason=document.getElementById('adjReason').value||'تحويل اضافي';if(!code||isNaN(amount)){alert('اكتب الكود والمبلغ');return;}var emp=null;for(var i=0;i<employees.length;i++){if(String(employees[i].code)===String(code)){emp=employees[i];break;}}if(!emp){alert('غير موجود');return;}emp.balance+=amount;if(emp.balance<0){emp.balance=0;}recordMovement(emp,amount,'تعديل يدوي',reason);saveToGitHub();document.getElementById('adjResult').innerHTML='تم';renderAdmin();}
 function addLeave(){
   var code=document.getElementById('leaveCode').value.trim();
   var from=dateDMYtoISO(document.getElementById('leaveFrom').value);
@@ -117,10 +118,7 @@ function addLeave(){
   for(var i=0;i<employees.length;i++){if(String(employees[i].code)===String(code)){emp=employees[i];break;}}
   if(!emp){alert('غير موجود');return;}
   if(hasLeaveOverlap(emp,from,to)){alert('⚠️ يوجد خصم إجازة مسجل بالفعل لهذا الموظف في يوم أو أكثر من الفترة المحددة. لم يتم خصم أي أيام.');return;}
-  emp.balance-=days;if(emp.balance<0){emp.balance=0;}
-  if(!emp.history){emp.history=[];}
-  var reasonText='اجازة من '+from+' إلى '+to+' - '+days+' يوم';
-  emp.history.push({id:Date.now(),date:from,from:from,to:to,amount:-days,reason:reasonText});
+  emp.balance-=days;if(emp.balance<0){emp.balance=0;}var reasonText='اجازة من '+from+' إلى '+to+' - '+days+' يوم';recordMovement(emp,-days,'إجازة مستخدمة',reasonText,from);var lastMove=emp.history[emp.history.length-1];lastMove.from=from;lastMove.to=to;
   saveToGitHub();
   document.getElementById('leaveResult').innerHTML='<div style="background:#065f46;padding:8px;border-radius:8px">✅ خصم '+days+' يوم من '+from+' إلى '+to+' - الجديد '+emp.balance.toFixed(1)+'</div>';
   renderAdmin();
@@ -148,18 +146,17 @@ function searchByCode(){
       }
     }
   }
-  var takenText='';
-  if(takenThisYear>0){
+  var ledgerHtml='<div style="background:#0f172a;padding:10px;border-radius:9px;margin-top:10px;text-align:right"><b>📒 سجل حركة الإجازات بالكامل</b>';if(emp.history&&emp.history.length){var ordered=emp.history.slice().sort(function(a,b){return String(a.date||'').localeCompare(String(b.date||''));});ledgerHtml+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:8px"><tr style="color:#a7f3d0"><th>التاريخ</th><th>الحركة</th><th>الأيام</th><th>الرصيد بعدها</th><th>البيان</th></tr>';for(var z=0;z<ordered.length;z++){var mv=ordered[z];var mvType=mv.type||(Number(mv.amount)<0?'خصم إجازة':'إضافة/تعديل');var mvAmount=Number(mv.amount)||0;var mvDate=mv.from&&mv.to?mv.from+' إلى '+mv.to:(mv.date||'—');var mvDays=(mvAmount>0?'+':'')+mvAmount.toFixed(1);var mvBalance=mv.balanceAfter==null?'غير مسجل':Number(mv.balanceAfter).toFixed(1);ledgerHtml+='<tr style="border-top:1px solid #334155"><td>'+mvDate+'</td><td>'+mvType+'</td><td>'+mvDays+'</td><td>'+mvBalance+'</td><td>'+String(mv.reason||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</td></tr>';}ledgerHtml+='</table></div>';}else{ledgerHtml+='<div style="font-size:12px;margin-top:6px">لا توجد حركات مسجلة حتى الآن. الرصيد الحالي قد يكون رصيدًا افتتاحيًا.</div>';}ledgerHtml+='</div>';var takenText='';if(takenThisYear>0){
     takenText='<div style="background:#7c2d12;padding:8px;border-radius:8px;margin-top:8px;border:1px solid #f59e0b;text-align:right">📊 <b>أخدت السنة دي '+currentYear+' : '+takenThisYear+' يوم</b><div style="font-size:11px;margin-top:6px;line-height:1.8">'+takenDetails.join('<br>')+'</div></div>';
   } else {
     takenText='<div style="background:#1e3a5f;padding:8px;border-radius:8px;margin-top:8px">📊 <b>مأخدتش اجازات السنة دي '+currentYear+' - 0 يوم</b></div>';
   }
   document.getElementById('adjCode').value=String(emp.code);
   document.getElementById('leaveCode').value=String(emp.code);
-  document.getElementById('empResult').innerHTML='<div style="background:#065f46;padding:14px;border-radius:12px;text-align:center"><b>كود: '+emp.code+' - الاسم مخفي للخصوصية - '+emp.type+'</b><div style="font-size:52px;font-weight:900">'+emp.balance.toFixed(1)+'</div><div>يوم رصيد متبقي</div><div class="tenure-box"><div>🔒 الاسم مخفي للخصوصية</div><div>🏢 '+emp.dept+'</div><div>'+tenure.text+'</div><div style="color:#10b981;font-weight:bold;margin-top:6px">'+tenure.remaining+'</div>'+takenText+'</div></div>';
+  document.getElementById('empResult').innerHTML='<div style="background:#065f46;padding:14px;border-radius:12px;text-align:center"><b>كود: '+emp.code+' - الاسم مخفي للخصوصية - '+emp.type+'</b><div style="font-size:52px;font-weight:900">'+emp.balance.toFixed(1)+'</div><div>يوم رصيد متبقي</div><div class="tenure-box"><div>🔒 الاسم مخفي للخصوصية</div><div>🏢 '+emp.dept+'</div><div>'+tenure.text+'</div><div style="color:#10b981;font-weight:bold;margin-top:6px">'+tenure.remaining+'</div>'+takenText+ledgerHtml+'</div></div>';
 }
 function renderAdmin(){if(!hasData){document.getElementById('adminList').innerHTML='فاضي';return;}var q=(document.getElementById('adminSearch').value||'').toLowerCase();var filtered=[];for(var i=0;i<employees.length;i++){var e=employees[i];if(!q||String(e.code).indexOf(q)>=0||e.name.toLowerCase().indexOf(q)>=0){filtered.push(e);}}var html='<table style="width:100%;background:#0f172a"><tr><th>كود</th><th>اسم</th><th>رصيد</th></tr>';for(var j=0;j<filtered.length&&j<300;j++){var emp=filtered[j];html+='<tr><td>'+emp.code+'</td><td>'+emp.name.slice(0,18)+'</td><td>'+emp.balance.toFixed(1)+'</td></tr>';}html+='</table>';document.getElementById('adminList').innerHTML=html;}
-function applyMonthlyIncrease(){if(!confirm('زيادة يوم 26؟'))return;var month=new Date().getMonth()+1;for(var i=0;i<employees.length;i++){var emp=employees[i];var tenure=getTenureYears(emp.hire);var isMog=String(emp.type).indexOf('مغترب')>=0;var add=0;if(isMog){if(tenure>=10&&month>=1&&month<=9){add=6;}else{add=5;}}else{if(tenure>=10&&month>=1&&month<=9){add=1;}}if(add>0){emp.balance+=add;}}saveToGitHub();alert('تمت الزيادة');renderAdmin();}
+function applyMonthlyIncrease(){if(!confirm('زيادة يوم 26؟'))return;var month=new Date().getMonth()+1;for(var i=0;i<employees.length;i++){var emp=employees[i];var tenure=getTenureYears(emp.hire);var isMog=String(emp.type).indexOf('مغترب')>=0;var add=0;if(isMog){if(tenure>=10&&month>=1&&month<=9){add=6;}else{add=5;}}else{if(tenure>=10&&month>=1&&month<=9){add=1;}}if(add>0){emp.balance+=add;recordMovement(emp,add,'إضافة دورية','زيادة يوم 26 - '+(isMog?'مغترب':'مقيم'));}}saveToGitHub();alert('تمت الزيادة');renderAdmin();}
 
 function applyAnnualReset(){
   if(!confirm('تصفية 26 ديسمبر للمقيمين فقط؟ هيصدر شيت أولاً بالرصيد حتى 25 ديسمبر وبعدها يصفر 21/30 مظبوط على حسب التعيين'))return;
@@ -194,15 +191,7 @@ function applyAnnualReset(){
     var emp2=employees[k];
     var isMog2=String(emp2.type).toLowerCase().indexOf('مغترب')>=0;
     var tenure2=getTenureYears(emp2.hire);
-    if(!isMog2){
-      emp2.balance=tenure2>=10?30:21;
-    } else {
-      // المغترب بيزود حسب قانونك
-      var addMog=tenure2>=10?6:5;
-      emp2.balance+=addMog;
-    }
-    if(!emp2.history){emp2.history=[];}
-    emp2.history.push({id:Date.now()+k,date:new Date().toISOString().slice(0,10),amount:0,reason:'تصفية 26 ديسمبر - رصيد جديد '+(isMog2?emp2.balance:(tenure2>=10?30:21))});
+    var oldBalance=Number(emp2.balance)||0;var movement=0;if(!isMog2){emp2.balance=tenure2>=10?30:21;movement=emp2.balance-oldBalance;}else{var addMog=tenure2>=10?6:5;emp2.balance+=addMog;movement=addMog;}recordMovement(emp2,movement,'تصفية سنوية','تصفية 26 ديسمبر - الرصيد قبل: '+oldBalance+' - الرصيد بعد: '+emp2.balance);
   }
   saveToGitHub();
   alert('تم تصدير شيت المقيمين حتى 25 ديسمبر + تمت التصفية 21/30 مظبوط على حسب تاريخ التعيين ✅');
